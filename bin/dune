@@ -1,0 +1,4 @@
+(executable
+ (public_name edml)
+ (name main)
+ (libraries edml eio_main core terml fmt))

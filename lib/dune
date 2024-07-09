@@ -1,0 +1,8 @@
+(library
+ (name edml)
+ (inline_tests)
+ (libraries eio_main)
+ (preprocess (pps 
+    ppx_inline_test
+    ppx_deriving.eq
+    ppx_deriving.show)))
