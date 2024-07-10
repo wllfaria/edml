@@ -1,3 +1,5 @@
 (library
  (name ansi)
- (libraries unix))
+ (libraries unix)
+ (preprocess (pps 
+    ppx_deriving.show)))
