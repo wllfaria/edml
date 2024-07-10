@@ -1,4 +1,4 @@
-let open_file path =
+let read_file path =
   let input_channel = open_in path in
   let rec read_lines channel lines =
     try

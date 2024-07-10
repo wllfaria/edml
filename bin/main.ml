@@ -1,11 +1,15 @@
-open Edml
+(* open Edml *)
+
+(* let filename = Sys.argv.(1) in *)
+(* Ansi.Terminal.enter_alternate_screen (); *)
+(* let _ = Fs.read_file filename in *)
 
 let () =
-  let filename = Sys.argv.(1) in
-  (* Terminal.enable_raw_mode (); *)
-  let content = Fs.open_file filename in
-  let _text_object = Text_object.make_text_object content in
-  let _buffer = Buffer.make_buffer 10 10 in
-  ()
+  Ansi.Terminal.enable_raw_mode ();
+  Ansi.Terminal.clear_screen ();
+  print_endline "lol";
+  let result = Ansi.Event.read () in
+  print_endline result
 ;;
-(* Terminal.disable_raw_mode () *)
+
+(* Ansi.Terminal.leave_alternate_screen () *)

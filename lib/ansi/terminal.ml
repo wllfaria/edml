@@ -56,3 +56,7 @@ let disable_raw_mode () =
     ();
     if close_fd then Unix.close fd
 ;;
+
+let clear_screen () = Printf.printf "\x1b[2J"
+let enter_alternate_screen () = Printf.printf "\x1b[?1049h"
+let leave_alternate_screen () = Printf.printf "\x1b[?1049l"
