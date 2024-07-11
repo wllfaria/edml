@@ -1,6 +1,6 @@
-type pane =
-  { cursor : Cursor.cursor
-  ; buffer : Buffer.buffer
+type t =
+  { cursor : Cursor.t ref
+  ; buffer : Text_buffer.t ref
   }
 
-let make buffer = { cursor = Cursor.make (); buffer }
+let make buffer = { cursor = ref (Cursor.make ()); buffer }

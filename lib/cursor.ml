@@ -1,4 +1,4 @@
-type cursor =
+type t =
   { row : int
   ; col : int
   }

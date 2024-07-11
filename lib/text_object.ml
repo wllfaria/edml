@@ -1,10 +1,10 @@
-type text_object =
+type t =
   { content : string list
   ; lines : int
   }
 [@@deriving eq, show]
 
-let make_text_object source =
+let make source =
   let content = String.split_on_char '\n' source in
   let lines = List.length content in
   { content; lines }
@@ -16,12 +16,10 @@ let%test _ =
     ; lines = 5
     }
   in
-  let result =
-    make_text_object {|#include <stdio.h>
+  let result = make {|#include <stdio.h>
 
 int main(void) {
     return 0;
-}|}
-  in
-  [%eq: text_object] result expected
+}|} in
+  [%eq: t] result expected
 ;;
