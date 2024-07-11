@@ -60,3 +60,17 @@ let disable_raw_mode () =
 let clear_screen () = Printf.printf "\x1b[2J"
 let enter_alternate_screen () = Printf.printf "\x1b[?1049h"
 let leave_alternate_screen () = Printf.printf "\x1b[?1049l"
+
+type dimensions =
+  { cols : int
+  ; rows : int
+  }
+[@@deriving show { with_path = false }]
+
+external size : unit -> dimensions = "edml_get_terminal_size"
+
+let%test "help me" =
+  let result = size () in
+  print_endline @@ show_dimensions result;
+  false
+;;

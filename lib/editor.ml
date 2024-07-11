@@ -1,8 +1,24 @@
 open Core
+open Pane
 open Viewport
 
+let todo () = failwith "Not yet implemented!"
+
+type pane_tree =
+  | Pane of Pane.t
+  | Branch of pane_branch
+
+and pane_branch =
+  { direction : direction
+  ; children : pane_tree
+  }
+
+and direction =
+  | Horizontal
+  | Vertical
+
 type editor =
-  { panes : Pane.t ref list
+  { panes : pane_tree
   ; viewport : Viewport.t ref
   }
 
@@ -14,11 +30,15 @@ let handle_key_event key_event editor =
     | { code = Char 'j'; _ } -> Cursor.MoveDown
     | { code = Char 'k'; _ } -> Cursor.MoveUp
     | { code = Char 'l'; _ } -> Cursor.MoveRight
-    | _ -> failwith "Unhandled key event"
+    | _ -> todo ()
   in
-  let pane = List.nth_exn editor.panes 0 in
-  let new_cursor = Cursor.handle_action !(!pane.cursor) cursor_motion in
-  !pane.cursor := new_cursor
+  let pane =
+    match editor.panes with
+    | Pane p -> p
+    | Branch _ -> todo ()
+  in
+  let new_cursor = Cursor.handle_action !(pane.cursor) cursor_motion in
+  pane.cursor := new_cursor
 ;;
 
 let print_whole_viewport (viewport : Viewport.t) =
@@ -38,15 +58,19 @@ let fill_viewport (buffer : Text_buffer.t ref) viewport =
 ;;
 
 let rec event_loop editor =
-  let pane = List.nth_exn editor.panes 0 in
-  let buffer = !pane.buffer in
+  let pane =
+    match editor.panes with
+    | Pane p -> p
+    | Branch _ -> todo ()
+  in
+  let buffer = pane.buffer in
   editor.viewport := fill_viewport buffer !(editor.viewport);
   print_whole_viewport !(editor.viewport);
-  (match Ansi.Event.read () with
-   | KeyEvent key_event -> handle_key_event key_event editor);
-  let cursor = !(pane.contents.cursor) in
+  let cursor = !(pane.cursor) in
   Ansi.Cursor.move_to cursor.col cursor.row;
   Out_channel.flush stdout;
+  (match Ansi.Event.read () with
+   | KeyEvent key_event -> handle_key_event key_event editor);
   event_loop editor
 ;;
 
@@ -55,9 +79,12 @@ let run () =
   let content = Fs.read_file filename in
   let text_object = Text_object.make content in
   let buffer = ref @@ Text_buffer.make text_object in
-  let viewport = ref @@ Viewport.make ~cols:80 ~rows:40 in
-  let pane = Pane.make buffer in
-  let editor = { panes = [ ref pane ]; viewport } in
+  let size = Ansi.Terminal.size () in
+  print_endline @@ Ansi.Terminal.show_dimensions size;
+  let viewport = ref @@ Viewport.make ~cols:size.cols ~rows:size.rows in
+  let position = { col = 0; row = 0; width = size.cols; height = size.rows } in
+  let pane = Pane.make buffer position in
+  let editor = { panes = Pane pane; viewport } in
   event_loop editor
 ;;
 
@@ -84,8 +111,8 @@ let%test "should fill the viewport" =
   let text_object = Text_object.make content in
   let buffer = ref @@ Text_buffer.make text_object in
   let viewport = ref @@ Viewport.make ~cols:9 ~rows:1 in
-  let pane = Pane.make buffer in
-  let editor = { panes = [ ref pane ]; viewport } in
+  let pane = Pane.make buffer { col = 0; row = 0; width = 9; height = 1 } in
+  let editor = { panes = Pane pane; viewport } in
   let result = fill_viewport buffer !(editor.viewport) in
   editor.viewport := result;
   [%eq: Viewport.t] !(editor.viewport) expect

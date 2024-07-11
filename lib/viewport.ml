@@ -1,31 +1,31 @@
 open Core
 
-type color = string [@@deriving eq, show]
+type t =
+  { cells : cell list
+  ; cols : int
+  ; rows : int
+  }
+[@@deriving eq, show { with_path = false }]
 
-type cell_style =
+and cell_style =
   { fg : color option
   ; bg : color option
   ; bold : bool
   }
 [@@deriving eq, show { with_path = false }]
 
-type cell =
+and color = string [@@deriving eq, show]
+
+and cell =
   { symbol : char
   ; styles : cell_style
   }
 [@@deriving eq, show { with_path = false }]
 
-type change =
+and change =
   { cell : cell
   ; col : int
   ; row : int
-  }
-[@@deriving eq, show { with_path = false }]
-
-type t =
-  { cells : cell list
-  ; cols : int
-  ; rows : int
   }
 [@@deriving eq, show { with_path = false }]
 
