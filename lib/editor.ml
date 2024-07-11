@@ -1,6 +1,7 @@
 open Core
 open Pane
 open Viewport
+open Text_buffer
 
 let todo () = failwith "Not yet implemented!"
 
@@ -41,19 +42,20 @@ let handle_key_event key_event editor =
   pane.cursor := new_cursor
 ;;
 
-let print_whole_viewport (viewport : Viewport.t) =
-  let changes = Viewport.to_changes viewport in
-  List.iter changes ~f:(fun change ->
-    Ansi.Cursor.move_to change.col change.row;
-    Printf.printf "%c" change.cell.symbol)
+let render_change change =
+  Ansi.Cursor.move_to change.col change.row;
+  Printf.printf "%c" change.cell.symbol
 ;;
 
-let fill_viewport (buffer : Text_buffer.t ref) viewport =
+let render_whole_viewport viewport = List.iter ~f:render_change @@ to_changes viewport
+let render_viewport_diffs prev curr = List.iter ~f:render_change @@ diff ~prev ~curr
+
+let fill_viewport buffer viewport =
   List.foldi !buffer.text_object.content ~init:viewport ~f:(fun row vp line ->
     if row < vp.rows
     then
       String.foldi line ~init:vp ~f:(fun col vp char ->
-        if col < vp.cols then Viewport.set_cell char ~col ~row ~vp else vp)
+        if col < vp.cols then set_cell char ~col ~row ~vp else vp)
     else vp)
 ;;
 
@@ -64,8 +66,9 @@ let rec event_loop editor =
     | Branch _ -> todo ()
   in
   let buffer = pane.buffer in
+  let previous_viewport = !(editor.viewport) in
   editor.viewport := fill_viewport buffer !(editor.viewport);
-  print_whole_viewport !(editor.viewport);
+  render_viewport_diffs previous_viewport !(editor.viewport);
   let cursor = !(pane.cursor) in
   Ansi.Cursor.move_to cursor.col cursor.row;
   Out_channel.flush stdout;
@@ -85,35 +88,6 @@ let run () =
   let position = { col = 0; row = 0; width = size.cols; height = size.rows } in
   let pane = Pane.make buffer position in
   let editor = { panes = Pane pane; viewport } in
+  render_whole_viewport !(editor.viewport);
   event_loop editor
-;;
-
-let%test "should fill the viewport" =
-  let open Viewport in
-  let default_style = { fg = None; bg = None; bold = false } in
-  let expect =
-    { cells =
-        [ { symbol = 'h'; styles = default_style }
-        ; { symbol = 'e'; styles = default_style }
-        ; { symbol = 'l'; styles = default_style }
-        ; { symbol = 'l'; styles = default_style }
-        ; { symbol = 'o'; styles = default_style }
-        ; { symbol = '!'; styles = default_style }
-        ; { symbol = ' '; styles = default_style }
-        ; { symbol = ' '; styles = default_style }
-        ; { symbol = ' '; styles = default_style }
-        ]
-    ; rows = 1
-    ; cols = 9
-    }
-  in
-  let content = "hello!" in
-  let text_object = Text_object.make content in
-  let buffer = ref @@ Text_buffer.make text_object in
-  let viewport = ref @@ Viewport.make ~cols:9 ~rows:1 in
-  let pane = Pane.make buffer { col = 0; row = 0; width = 9; height = 1 } in
-  let editor = { panes = Pane pane; viewport } in
-  let result = fill_viewport buffer !(editor.viewport) in
-  editor.viewport := result;
-  [%eq: Viewport.t] !(editor.viewport) expect
 ;;

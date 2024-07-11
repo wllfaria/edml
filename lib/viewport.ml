@@ -74,17 +74,17 @@ let to_changes viewport =
     { cell; col; row })
 ;;
 
-let diff ~vp_a ~vp_b =
+let diff ~prev ~curr =
   let changes = ref [] in
-  List.iteri vp_a.cells ~f:(fun idx cell ->
-    let row = idx / vp_a.cols in
-    let col = idx mod vp_a.cols in
-    match phys_equal (List.length vp_a.cells) (List.length vp_b.cells) with
+  List.iteri prev.cells ~f:(fun idx cell ->
+    let row = idx / prev.cols in
+    let col = idx mod prev.cols in
+    match phys_equal (List.length prev.cells) (List.length curr.cells) with
     | false -> changes := { cell; col; row } :: !changes
     | true ->
-      (match phys_equal cell (List.nth_exn vp_b.cells idx) with
+      (match phys_equal cell (List.nth_exn curr.cells idx) with
        | true -> ()
-       | false -> changes := { cell = List.nth_exn vp_b.cells idx; col; row } :: !changes));
+       | false -> changes := { cell = List.nth_exn curr.cells idx; col; row } :: !changes));
   List.rev !changes
 ;;
 
@@ -103,15 +103,15 @@ let%test "should get correct diffs" =
     ; { cell = sample_cell; col = 2; row = 1 }
     ]
   in
-  let vp_a = make ~cols:3 ~rows:2 in
-  let vp_b =
+  let prev = make ~cols:3 ~rows:2 in
+  let curr =
     { cols = 3
     ; rows = 2
     ; cells =
         [ sample_cell; make_cell (); sample_cell; make_cell (); sample_cell; sample_cell ]
     }
   in
-  let result = diff ~vp_a ~vp_b in
+  let result = diff ~prev ~curr in
   [%eq: change list] expected result
 ;;
 
