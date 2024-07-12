@@ -68,9 +68,3 @@ type dimensions =
 [@@deriving show { with_path = false }]
 
 external size : unit -> dimensions = "edml_get_terminal_size"
-
-let%test "help me" =
-  let result = size () in
-  print_endline @@ show_dimensions result;
-  false
-;;

@@ -88,6 +88,16 @@ let diff ~prev ~curr =
   List.rev !changes
 ;;
 
+let pp_cells cells width =
+  let height = (List.length cells + width - 1) / width in
+  let grid = Array.make_matrix ~dimx:height ~dimy:width ' ' in
+  List.iteri cells ~f:(fun idx cell ->
+    let row = idx / width in
+    let col = idx mod width in
+    grid.(row).(col) <- cell.symbol);
+  Array.iter grid ~f:(fun row -> printf "%s\n" (String.of_char_list (Array.to_list row)))
+;;
+
 let%test "should create correct sized viewport" =
   let expected_len = 100 in
   let result = make ~cols:10 ~rows:10 in

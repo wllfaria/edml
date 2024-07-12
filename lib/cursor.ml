@@ -2,6 +2,7 @@ type t =
   { row : int
   ; col : int
   }
+[@@deriving show { with_path = false }]
 
 type cursor_action =
   | MoveLeft

@@ -1,14 +1,7 @@
 type t =
   { cursor : Cursor.t ref
-  ; buffer : Text_buffer.t ref
-  ; position : position
+  ; buffer_id : int
   }
+[@@deriving show { with_path = false }]
 
-and position =
-  { col : int
-  ; row : int
-  ; width : int
-  ; height : int
-  }
-
-let make buffer position = { cursor = ref (Cursor.make ()); buffer; position }
+let make buffer_id = { cursor = ref (Cursor.make ()); buffer_id }
