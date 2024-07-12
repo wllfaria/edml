@@ -41,9 +41,9 @@ and direction =
   | Horizontal
   | Vertical
 
-let handle_key_event key_event editor =
+let handle_key_event key_event (_ : editor) =
   let open Ansi.Event in
-  let cursor_motion =
+  let _ =
     match key_event with
     | { code = Char 'h'; _ } -> Cursor.MoveLeft
     | { code = Char 'j'; _ } -> Cursor.MoveDown
@@ -51,13 +51,7 @@ let handle_key_event key_event editor =
     | { code = Char 'l'; _ } -> Cursor.MoveRight
     | _ -> todo ()
   in
-  let pane =
-    match editor.panes with
-    | Pane p -> p
-    | Branch _ -> todo ()
-  in
-  let new_cursor = Cursor.handle_action !(pane.cursor) cursor_motion in
-  pane.cursor := new_cursor
+  ()
 ;;
 
 let render_change (change : change) =
@@ -66,7 +60,7 @@ let render_change (change : change) =
 ;;
 
 let render_whole_viewport viewport = List.iter ~f:render_change @@ to_changes viewport
-(* let render_viewport_diffs prev curr = List.iter ~f:render_change @@ diff ~prev ~curr *)
+let render_viewport_diffs prev curr = List.iter ~f:render_change @@ diff ~prev ~curr
 
 let fill_viewport buffer viewport (position : position) =
   let result =
@@ -82,32 +76,6 @@ let fill_viewport buffer viewport (position : position) =
       else vp)
   in
   result
-;;
-
-(* let rec event_loop editor = *)
-(*   let pane = *)
-(*     match editor.panes with *)
-(*     | Pane p -> p *)
-(*     | Branch _ -> todo () *)
-(*   in *)
-(*   let buffer = pane.buffer in *)
-(*   let previous_viewport = !(editor.viewport) in *)
-(*   editor.viewport := fill_viewport buffer !(editor.viewport); *)
-(*   render_viewport_diffs previous_viewport !(editor.viewport); *)
-(*   let cursor = !(pane.cursor) in *)
-(*   Ansi.Cursor.move_to cursor.col cursor.row; *)
-(*   Out_channel.flush stdout; *)
-(*   (match Ansi.Event.read () with *)
-(*    | KeyEvent key_event -> handle_key_event key_event editor); *)
-(*   event_loop editor *)
-(* ;; *)
-
-let buffer_id = ref 0
-
-let next_buffer_id () =
-  let id = !buffer_id in
-  buffer_id := !buffer_id + 1;
-  id
 ;;
 
 let render_pane pane position editor =
@@ -170,52 +138,38 @@ let render_tab tab editor =
     := render_pane p { col = 0; row = 0; width = vp.cols; height = vp.rows } editor
 ;;
 
+let rec event_loop editor =
+  let previous_viewport = !(editor.viewport) in
+  let tab = List.nth_exn editor.tabs editor.active_tab in
+  render_tab tab editor;
+  render_viewport_diffs previous_viewport !(editor.viewport);
+  (match Ansi.Event.read () with
+   | KeyEvent key_event -> handle_key_event key_event editor);
+  event_loop editor
+;;
+
+let buffer_id = ref 0
+
+let next_buffer_id () =
+  let id = !buffer_id in
+  buffer_id := !buffer_id + 1;
+  id
+;;
+
 let run () =
   let filename = (Sys.get_argv ()).(1) in
   let content = Fs.read_file filename in
-  let content_b =
-    Fs.read_file "../hac/hac-client/src/pages/collection_viewer/collection_viewer.rs"
-  in
   let text_object = Text_object.make content in
-  let text_object_b = Text_object.make content_b in
   let buffer = Text_buffer.make text_object @@ next_buffer_id () in
-  let buffer_b = Text_buffer.make text_object_b @@ next_buffer_id () in
   let size = Ansi.Terminal.size () in
   let viewport = ref @@ Viewport.make ~cols:size.cols ~rows:size.rows in
-  let buffers = [ buffer; buffer_b ] in
+  let buffers = [ buffer ] in
   let pane = Pane.make buffer.id in
-  let pane_b = Pane.make buffer_b.id in
-  let tab =
-    { panes =
-        Branch
-          { direction = Vertical
-          ; panes =
-              [ Pane pane
-              ; Branch
-                  { panes = [ Pane pane; Pane pane_b ]
-                  ; direction = Horizontal
-                  ; ratios = [ 0.5; 0.5 ]
-                  }
-              ]
-          ; ratios = [ 0.5; 0.5 ]
-          }
-    }
-  in
+  let tab = { panes = Pane pane } in
   let tabs = [ tab ] in
   let editor = { buffers; tabs; viewport; active_tab = 0 } in
   render_tab (List.nth_exn editor.tabs 0) editor;
   render_whole_viewport !(editor.viewport);
-  Out_channel.flush stdout
+  Out_channel.flush stdout;
+  event_loop editor
 ;;
-
-(* let rec loop () = loop () in *)
-(* loop () *)
-
-(* let pane = Pane.make buffer in *)
-(* let pane_b = Pane.make buffer_b in *)
-(* let panes = Branch { direction = Horizontal; panes = [ Pane pane; Pane pane_b ] } in *)
-(* let tab = { panes } in *)
-(* let editor = { tabs = [ tab ]; viewport } in *)
-(* editor.viewport := fill_viewport buffer !(editor.viewport); *)
-(* render_whole_viewport !(editor.viewport); *)
-(* event_loop editor *)
