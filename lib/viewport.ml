@@ -1,7 +1,7 @@
 open Core
 
 type t =
-  { cells : cell list
+  { cells : cell array
   ; cols : int
   ; rows : int
   }
@@ -32,14 +32,7 @@ and change =
 let make_cell () = { symbol = ' '; styles = { fg = None; bg = None; bold = false } }
 
 let make ~cols ~rows =
-  let rec make_cells row col acc =
-    if row >= rows
-    then acc
-    else if col >= cols
-    then make_cells (row + 1) 0 acc
-    else make_cells row (col + 1) (make_cell () :: acc)
-  in
-  let cells = List.rev @@ make_cells 0 0 [] in
+  let cells = Array.create ~len:(cols * rows) (make_cell ()) in
   { cells; cols; rows }
 ;;
 
@@ -48,7 +41,7 @@ let normalize_col_row col row total_cols = (row * total_cols) + col
 let set_cell char ~col ~row ~vp =
   let pos = normalize_col_row col row vp.cols in
   let new_cells =
-    List.mapi vp.cells ~f:(fun idx cell ->
+    Array.mapi vp.cells ~f:(fun idx cell ->
       if phys_equal idx pos then { cell with symbol = char } else cell)
   in
   { vp with cells = new_cells }
@@ -57,7 +50,7 @@ let set_cell char ~col ~row ~vp =
 let set_text text ~col ~row ~vp =
   let pos = normalize_col_row col row vp.cols in
   let new_cells =
-    List.mapi vp.cells ~f:(fun idx cell ->
+    Array.mapi vp.cells ~f:(fun idx cell ->
       if idx >= pos && idx < pos + String.length text
       then (
         let new_symbol = String.get text (idx - pos) in
@@ -68,24 +61,24 @@ let set_text text ~col ~row ~vp =
 ;;
 
 let to_changes viewport =
-  List.mapi viewport.cells ~f:(fun idx cell ->
+  Array.mapi viewport.cells ~f:(fun idx cell ->
     let row = idx / viewport.cols in
     let col = idx mod viewport.cols in
     { cell; col; row })
 ;;
 
 let diff ~prev ~curr =
-  let changes = ref [] in
-  List.iteri prev.cells ~f:(fun idx cell ->
-    let row = idx / prev.cols in
-    let col = idx mod prev.cols in
-    match phys_equal (List.length prev.cells) (List.length curr.cells) with
-    | false -> changes := { cell; col; row } :: !changes
-    | true ->
-      (match phys_equal cell (List.nth_exn curr.cells idx) with
-       | true -> ()
-       | false -> changes := { cell = List.nth_exn curr.cells idx; col; row } :: !changes));
-  List.rev !changes
+  if Array.length prev.cells <> Array.length curr.cells
+  then failwith "Viewports have different sizes"
+  else (
+    let changes = ref [] in
+    Array.iteri prev.cells ~f:(fun idx cell ->
+      let row = idx / prev.cols in
+      let col = idx mod prev.cols in
+      let other = curr.cells.(idx) in
+      if not (phys_equal cell other)
+      then changes := { cell = other; col; row } :: !changes);
+    List.rev !changes)
 ;;
 
 let pp_cells cells width =
@@ -101,7 +94,7 @@ let pp_cells cells width =
 let%test "should create correct sized viewport" =
   let expected_len = 100 in
   let result = make ~cols:10 ~rows:10 in
-  phys_equal expected_len (List.length result.cells)
+  phys_equal expected_len (Array.length result.cells)
 ;;
 
 let%test "should get correct diffs" =
@@ -118,7 +111,13 @@ let%test "should get correct diffs" =
     { cols = 3
     ; rows = 2
     ; cells =
-        [ sample_cell; make_cell (); sample_cell; make_cell (); sample_cell; sample_cell ]
+        [| sample_cell
+         ; make_cell ()
+         ; sample_cell
+         ; make_cell ()
+         ; sample_cell
+         ; sample_cell
+        |]
     }
   in
   let result = diff ~prev ~curr in
@@ -129,33 +128,33 @@ let%test "should make new vp with correct text" =
   let base_style = { fg = None; bg = None; bold = false } in
   let expect =
     { cells =
-        [ { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = 'H'; styles = base_style }
-        ; { symbol = 'e'; styles = base_style }
-        ; { symbol = 'l'; styles = base_style }
-        ; { symbol = 'l'; styles = base_style }
-        ; { symbol = 'o'; styles = base_style }
-        ; { symbol = ','; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = 'W'; styles = base_style }
-        ; { symbol = 'o'; styles = base_style }
-        ; { symbol = 'r'; styles = base_style }
-        ; { symbol = 'l'; styles = base_style }
-        ; { symbol = 'd'; styles = base_style }
-        ; { symbol = '!'; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ]
+        [| { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = 'H'; styles = base_style }
+         ; { symbol = 'e'; styles = base_style }
+         ; { symbol = 'l'; styles = base_style }
+         ; { symbol = 'l'; styles = base_style }
+         ; { symbol = 'o'; styles = base_style }
+         ; { symbol = ','; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = 'W'; styles = base_style }
+         ; { symbol = 'o'; styles = base_style }
+         ; { symbol = 'r'; styles = base_style }
+         ; { symbol = 'l'; styles = base_style }
+         ; { symbol = 'd'; styles = base_style }
+         ; { symbol = '!'; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+        |]
     ; rows = 2
     ; cols = 13
     }
@@ -169,11 +168,11 @@ let%test "should make new vp with correct cell" =
   let base_style = { fg = None; bg = None; bold = false } in
   let expect =
     { cells =
-        [ { symbol = ' '; styles = base_style }
-        ; { symbol = ' '; styles = base_style }
-        ; { symbol = 'x'; styles = base_style }
-        ; { symbol = 'x'; styles = base_style }
-        ]
+        [| { symbol = ' '; styles = base_style }
+         ; { symbol = ' '; styles = base_style }
+         ; { symbol = 'x'; styles = base_style }
+         ; { symbol = 'x'; styles = base_style }
+        |]
     ; rows = 2
     ; cols = 2
     }

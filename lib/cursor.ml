@@ -1,3 +1,5 @@
+open Core
+
 type t =
   { row : int
   ; col : int
@@ -14,7 +16,7 @@ let make () = { col = 0; row = 0 }
 
 let move_left cursor =
   match cursor.col with
-  | col when col == 0 && cursor.row > 0 -> { cursor with row = cursor.row - 1 }
+  | col when col = 0 && cursor.row > 0 -> { cursor with row = cursor.row - 1 }
   | _ -> { cursor with col = cursor.col - 1 }
 ;;
 
@@ -26,7 +28,7 @@ let move_up cursor =
 
 let move_down cursor = { cursor with row = cursor.row + 1 }
 
-let handle_action cursor action =
+let handle_action action cursor =
   match action with
   | MoveLeft -> move_left cursor
   | MoveRight -> move_right cursor

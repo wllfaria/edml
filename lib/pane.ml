@@ -1,7 +1,8 @@
 type t =
   { cursor : Cursor.t ref
+  ; id : int
   ; buffer_id : int
   }
 [@@deriving show { with_path = false }]
 
-let make buffer_id = { cursor = ref (Cursor.make ()); buffer_id }
+let make buffer_id id = { cursor = ref (Cursor.make ()); buffer_id; id }
