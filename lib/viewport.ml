@@ -82,9 +82,9 @@ let diff ~prev ~curr =
 ;;
 
 let pp_cells cells width =
-  let height = (List.length cells + width - 1) / width in
+  let height = (Array.length cells + width - 1) / width in
   let grid = Array.make_matrix ~dimx:height ~dimy:width ' ' in
-  List.iteri cells ~f:(fun idx cell ->
+  Array.iteri cells ~f:(fun idx cell ->
     let row = idx / width in
     let col = idx mod width in
     grid.(row).(col) <- cell.symbol);

@@ -1,6 +1,6 @@
 let escape = Printf.sprintf "\x1b%s"
 
-let move_to col row =
+let move_to ~col ~row =
   Printf.printf "%s" @@ escape @@ Printf.sprintf "[%d;%dH" (row + 1) (col + 1)
 ;;
 

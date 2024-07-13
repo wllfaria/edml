@@ -3,35 +3,69 @@ open Core
 type t =
   { row : int
   ; col : int
+  ; real_col : int
   }
-[@@deriving show { with_path = false }]
+[@@deriving eq, show { with_path = false }]
 
 type cursor_action =
   | MoveLeft
   | MoveRight
   | MoveUp
   | MoveDown
+[@@deriving show { with_path = false }]
 
-let make () = { col = 0; row = 0 }
+let min a b = if a > b then b else a
+let mac a b = if a < b then b else a
+let make () = { col = 0; row = 0; real_col = 0 }
+
+let adjust_column cursor line =
+  let line_len = String.length line in
+  if cursor.real_col < line_len
+  then { cursor with col = cursor.real_col }
+  else { cursor with col = max line_len 0 }
+;;
 
 let move_left cursor =
-  match cursor.col with
-  | col when col = 0 && cursor.row > 0 -> { cursor with row = cursor.row - 1 }
-  | _ -> { cursor with col = cursor.col - 1 }
+  let cursor = if cursor.col > 0 then { cursor with col = cursor.col - 1 } else cursor in
+  { cursor with real_col = cursor.col }
 ;;
 
-let move_right cursor = { cursor with col = cursor.col + 1 }
-
-let move_up cursor =
-  if cursor.row > 0 then { cursor with row = cursor.row - 1 } else cursor
+let move_right cursor text_object =
+  let open Text_object in
+  let line = List.nth_exn text_object.content cursor.row in
+  let cursor =
+    if cursor.col < String.length line
+    then { cursor with col = cursor.col + 1 }
+    else cursor
+  in
+  { cursor with real_col = cursor.col }
 ;;
 
-let move_down cursor = { cursor with row = cursor.row + 1 }
+let move_up cursor text_object =
+  let open Text_object in
+  if cursor.row > 0
+  then (
+    let cursor = { cursor with row = cursor.row - 1 } in
+    let line = List.nth_exn text_object.content cursor.row in
+    adjust_column cursor line)
+  else cursor
+;;
 
-let handle_action action cursor =
+let move_down cursor text_object =
+  let open Text_object in
+  let cursor =
+    if cursor.row < List.length text_object.content - 1
+    then { cursor with row = cursor.row + 1 }
+    else cursor
+  in
+  let line = List.nth_exn text_object.content cursor.row in
+  adjust_column cursor line
+;;
+
+let handle_action action cursor text_object =
   match action with
   | MoveLeft -> move_left cursor
-  | MoveRight -> move_right cursor
-  | MoveUp -> move_up cursor
-  | MoveDown -> move_down cursor
+  | MoveRight -> move_right cursor text_object
+  | MoveUp -> move_up cursor text_object
+  | MoveDown -> move_down cursor text_object
 ;;

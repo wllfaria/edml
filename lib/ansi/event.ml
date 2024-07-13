@@ -1,25 +1,54 @@
 let tty_buffer_size = 10
 
-type keycode =
-  | Char of char
-  | Tab
-  | Enter
-  | Backspace
+type event =
+  | FocusGained
+  | FocusLost
+  | KeyEvent of key_event
 [@@deriving show { with_path = false }]
 
-type key_modifier =
-  | Control
-  | Shift
-  | Normal
-[@@deriving show { with_path = false }]
-
-type key_event =
+and key_event =
   { code : keycode
   ; modifier : key_modifier
   }
 [@@deriving show { with_path = false }]
 
-type event = KeyEvent of key_event [@@deriving show { with_path = false }]
+and keycode =
+  | Char of char
+  | Tab
+  | Enter
+  | Backspace
+  | Left
+  | Right
+  | Up
+  | Down
+  | Esc
+  | Home
+  | End
+  | BackTab
+[@@deriving show { with_path = false }]
+
+and key_modifier =
+  | Control
+  | Shift
+  | Normal
+[@@deriving show { with_path = false }]
+
+let parse_csi buffer =
+  if Bytes.length buffer = 2
+  then KeyEvent { code = Esc; modifier = Normal }
+  else (
+    match Bytes.get buffer 2 with
+    | 'D' -> KeyEvent { code = Left; modifier = Normal }
+    | 'C' -> KeyEvent { code = Right; modifier = Normal }
+    | 'A' -> KeyEvent { code = Up; modifier = Normal }
+    | 'B' -> KeyEvent { code = Down; modifier = Normal }
+    | 'H' -> KeyEvent { code = Home; modifier = Normal }
+    | 'F' -> KeyEvent { code = End; modifier = Normal }
+    | 'Z' -> KeyEvent { code = BackTab; modifier = Shift }
+    | 'I' -> FocusGained
+    | 'O' -> FocusLost
+    | _ -> failwith "could not parse csi event")
+;;
 
 let read () =
   let buffer = Bytes.create tty_buffer_size in
@@ -29,7 +58,10 @@ let read () =
     | 0 -> loop ()
     | _ ->
       (match Bytes.get buffer 0 with
-       | '\x1b' -> failwith "not yet implemented"
+       | '\x1b' ->
+         (match Bytes.length buffer with
+          | 1 -> KeyEvent { code = Esc; modifier = Normal }
+          | _ -> parse_csi buffer)
        | '\x7f' -> KeyEvent { code = Backspace; modifier = Normal }
        | '\r' -> KeyEvent { code = Enter; modifier = Normal }
        | '\t' -> KeyEvent { code = Tab; modifier = Normal }

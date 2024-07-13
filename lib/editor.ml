@@ -3,8 +3,6 @@ open Pane
 open Viewport
 open Text_buffer
 
-let todo () = failwith "Not yet implemented!"
-
 type position =
   { row : int
   ; col : int
@@ -46,18 +44,27 @@ and direction =
 
 type action = Cursor of Cursor.cursor_action
 
+let buffer_id = ref 0
+let pane_id = ref 0
+
+let next_id ~id_ref =
+  let id = !id_ref in
+  id_ref := !id_ref + 1;
+  id
+;;
+
 let handle_key_event key_event =
   let open Ansi.Event in
   match key_event with
-  | { code = Char 'h'; _ } -> Some (Cursor Cursor.MoveLeft)
-  | { code = Char 'j'; _ } -> Some (Cursor Cursor.MoveDown)
-  | { code = Char 'k'; _ } -> Some (Cursor Cursor.MoveUp)
-  | { code = Char 'l'; _ } -> Some (Cursor Cursor.MoveRight)
+  | { code = Left; _ } -> Some (Cursor Cursor.MoveLeft)
+  | { code = Down; _ } -> Some (Cursor Cursor.MoveDown)
+  | { code = Up; _ } -> Some (Cursor Cursor.MoveUp)
+  | { code = Right; _ } -> Some (Cursor Cursor.MoveRight)
   | _ -> None
 ;;
 
 let render_change (change : change) =
-  Ansi.Cursor.move_to change.col change.row;
+  Ansi.Cursor.move_to ~col:change.col ~row:change.row;
   Printf.printf "%c" change.cell.symbol
 ;;
 
@@ -87,7 +94,8 @@ let distribute_dimension dimension ratios =
   let parts = List.map ratios ~f:(fun r -> r *. float_of_int dimension |> int_of_float) in
   let sum = List.fold parts ~init:0 ~f:( + ) in
   let remainder = dimension - sum in
-  List.mapi parts ~f:(fun idx w -> if idx < remainder then w + 1 else w)
+  let len = List.length parts in
+  List.mapi parts ~f:(fun idx w -> if idx = len - 1 then w + remainder else w)
 ;;
 
 let rec render_branch ~col:_ ~row ~width ~height ~branch ~editor =
@@ -142,9 +150,8 @@ let rec find_pane node needle =
   | _ -> None
 ;;
 
-let handle_cursor_action action cursor = Cursor.handle_action action cursor
-
 let rec event_loop editor =
+  Ansi.Cursor.hide ();
   let previous_viewport = !(editor.viewport) in
   let tab = List.nth_exn editor.tabs editor.active_tab in
   render_tab tab editor;
@@ -155,26 +162,20 @@ let rec event_loop editor =
     | None -> failwith "unreachable"
   in
   let cursor = !(pane.cursor) in
-  Ansi.Cursor.move_to cursor.row cursor.col;
+  Ansi.Cursor.move_to ~col:cursor.col ~row:cursor.row;
+  Ansi.Cursor.show ();
   Out_channel.flush stdout;
   let maybe_action =
     match Ansi.Event.read () with
     | KeyEvent key_event -> handle_key_event key_event
+    | _ -> failwith "lol"
   in
   (match maybe_action with
    | Some (Cursor cursor_action) ->
-     pane.cursor := handle_cursor_action cursor_action cursor
+     let buffer = List.nth_exn editor.buffers pane.buffer_id in
+     pane.cursor := Cursor.handle_action cursor_action cursor buffer.text_object
    | None -> ());
   event_loop editor
-;;
-
-let buffer_id = ref 0
-let pane_id = ref 0
-
-let next_id ~id_ref =
-  let id = !id_ref in
-  id_ref := !id_ref + 1;
-  id
 ;;
 
 let run () =
@@ -185,7 +186,7 @@ let run () =
   let size = Ansi.Terminal.size () in
   let viewport = ref @@ Viewport.make ~cols:size.cols ~rows:size.rows in
   let buffers = [ buffer ] in
-  let pane = Pane.make buffer.id @@ next_id ~id_ref:pane_id in
+  let pane = Pane.make ~buffer_id:buffer.id ~id:(next_id ~id_ref:pane_id) in
   let tab = { panes = Pane pane; active_pane = pane.id } in
   let tabs = [ tab ] in
   let editor = { buffers; tabs; viewport; active_tab = 0 } in

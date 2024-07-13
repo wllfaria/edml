@@ -1,20 +1,32 @@
-type keycode =
+type event = 
+  | FocusGained
+  | FocusLost
+  | KeyEvent of key_event
+
+and keycode =
   | Char of char
   | Tab
   | Enter
   | Backspace
+  | Left
+  | Right
+  | Up
+  | Down
+  | Esc
+  | Home
+  | End
+  | BackTab
 
-type key_modifier =
+and key_modifier =
   | Control
   | Shift
   | Normal
 
-type key_event =
+and key_event =
   { code : keycode
   ; modifier : key_modifier
   }
 
-type event = KeyEvent of key_event
-
 val show_event : event -> string
+val show_key_event : key_event -> string
 val read : unit -> event
