@@ -1,15 +1,9 @@
 open Core
+open Utils
+open Types
 open Pane
 open Viewport
 open Text_buffer
-
-type position =
-  { row : int
-  ; col : int
-  ; width : int
-  ; height : int
-  }
-[@@deriving show { with_path = false }]
 
 type editor =
   { tabs : tab list
@@ -42,27 +36,6 @@ and direction =
   | Horizontal
   | Vertical
 
-type action = Cursor of Cursor.cursor_action
-
-let buffer_id = ref 0
-let pane_id = ref 0
-
-let next_id ~id_ref =
-  let id = !id_ref in
-  id_ref := !id_ref + 1;
-  id
-;;
-
-let handle_key_event key_event =
-  let open Ansi.Event in
-  match key_event with
-  | { code = Left; _ } -> Some (Cursor Cursor.MoveLeft)
-  | { code = Down; _ } -> Some (Cursor Cursor.MoveDown)
-  | { code = Up; _ } -> Some (Cursor Cursor.MoveUp)
-  | { code = Right; _ } -> Some (Cursor Cursor.MoveRight)
-  | _ -> None
-;;
-
 let render_change (change : change) =
   Ansi.Cursor.move_to ~col:change.col ~row:change.row;
   Printf.printf "%c" change.cell.symbol
@@ -71,23 +44,10 @@ let render_change (change : change) =
 let render_whole_viewport viewport = Array.iter ~f:render_change @@ to_changes viewport
 let render_viewport_diffs prev curr = List.iter ~f:render_change @@ diff ~prev ~curr
 
-let fill_viewport buffer viewport (position : position) =
-  List.foldi buffer.text_object.content ~init:!viewport ~f:(fun row vp line ->
-    let row = position.row + row in
-    if row < vp.rows && row < position.row + position.height
-    then
-      String.foldi line ~init:vp ~f:(fun col vp char ->
-        let col = col + position.col in
-        if col < vp.cols && col < position.col + position.width
-        then set_cell char ~col ~row ~vp
-        else vp)
-    else vp)
-;;
-
 let render_pane pane position editor =
   let buffer = List.nth_exn editor.buffers pane.buffer_id in
   let viewport = editor.viewport in
-  fill_viewport buffer viewport position
+  Viewport.fill buffer viewport position
 ;;
 
 let distribute_dimension dimension ratios =
@@ -95,7 +55,7 @@ let distribute_dimension dimension ratios =
   let sum = List.fold parts ~init:0 ~f:( + ) in
   let remainder = dimension - sum in
   let len = List.length parts in
-  List.mapi parts ~f:(fun idx w -> if idx = len - 1 then w + remainder else w)
+  List.mapi parts ~f:(fun idx p -> if idx = len - 1 then p + remainder else p)
 ;;
 
 let rec render_branch ~col:_ ~row ~width ~height ~branch ~editor =
@@ -166,6 +126,7 @@ let rec event_loop editor =
   Ansi.Cursor.show ();
   Out_channel.flush stdout;
   let maybe_action =
+    let open Event_handler in
     match Ansi.Event.read () with
     | KeyEvent key_event -> handle_key_event key_event
     | _ -> failwith "lol"

@@ -1,4 +1,5 @@
 open Editor
+open Types
 open Core
 
 let%test "fill viewport respects position" =
@@ -11,7 +12,7 @@ let%test "fill viewport respects position" =
   let buffer = Text_buffer.make text_object 0 in
   let vp = ref { cells; rows; cols } in
   let result =
-    fill_viewport buffer vp { col = 5; row = 0; width = cols; height = rows }
+    Viewport.fill buffer vp { col = 5; row = 0; width = cols; height = rows }
   in
   let styles = { fg = None; bg = None; bold = false } in
   let expect =

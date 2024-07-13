@@ -1,8 +1,9 @@
 (library
  (name ansi)
  (inline_tests)
- (libraries unix)
+ (libraries unix fmt core core_unix)
  (foreign_stubs (language c) (names terminal))
  (preprocess (pps 
     ppx_inline_test
-    ppx_deriving.show)))
+    ppx_deriving.show
+    ppx_deriving.eq)))
