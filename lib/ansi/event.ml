@@ -25,6 +25,7 @@ and keycode =
   | Esc
   | Home
   | End
+  | BackTab
   | F of int
 [@@deriving eq, show { with_path = false }]
 
@@ -37,6 +38,7 @@ and key_modifier =
 type state =
   | Initial
   | Escape
+  | Csi
 [@@deriving show { with_path = false }]
 
 let initial_process ~buffer ~idx ~len =
@@ -86,7 +88,7 @@ let escape_process ~buffer ~idx ~len =
   | 1 ->
     (match byte with
      | '0' -> Escape, None (* this equivalent to ignoring the token *)
-     | '[' -> failwith "not yet implemented"
+     | '[' -> Csi, None (* transition to csi state *)
      | '\x1B' ->
        (* when the bufer has \x1b\x1b twice in a row, it means esc *)
        let key_event = KeyEvent { code = Esc; modifier = Normal } in
@@ -122,12 +124,50 @@ let escape_process ~buffer ~idx ~len =
      | _ -> failwith "could not parse escape sequence")
 ;;
 
+let csi_process ~buffer ~idx ~len =
+  assert (!idx < len);
+  assert (!idx = 2);
+  match Bytes.get buffer !idx with
+  | 'D' ->
+    let key_event = KeyEvent { code = Left; modifier = Normal } in
+    Escape, Some key_event
+  | 'B' ->
+    let key_event = KeyEvent { code = Down; modifier = Normal } in
+    Escape, Some key_event
+  | 'A' ->
+    let key_event = KeyEvent { code = Up; modifier = Normal } in
+    Escape, Some key_event
+  | 'C' ->
+    let key_event = KeyEvent { code = Right; modifier = Normal } in
+    Escape, Some key_event
+  | 'H' ->
+    let key_event = KeyEvent { code = Home; modifier = Normal } in
+    Escape, Some key_event
+  | 'F' ->
+    let key_event = KeyEvent { code = End; modifier = Normal } in
+    Escape, Some key_event
+  | 'Z' ->
+    let key_event = KeyEvent { code = BackTab; modifier = Shift } in
+    Escape, Some key_event
+  | 'P' ->
+    let key_event = KeyEvent { code = F 1; modifier = Normal } in
+    Escape, Some key_event
+  | 'Q' ->
+    let key_event = KeyEvent { code = F 2; modifier = Normal } in
+    Escape, Some key_event
+  | 'S' ->
+    let key_event = KeyEvent { code = F 4; modifier = Normal } in
+    Escape, Some key_event
+  | _ -> failwith "not yet implemented"
+;;
+
 let rec process_buffer ~state ~buffer ~idx ~len =
   assert (!idx < len);
   let next_state, event =
     match state with
     | Initial -> initial_process ~buffer ~idx ~len
     | Escape -> escape_process ~buffer ~idx ~len
+    | Csi -> csi_process ~buffer ~idx ~len
   in
   idx := !idx + 1;
   match event with

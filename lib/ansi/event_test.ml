@@ -208,3 +208,95 @@ let%test "parse function keys F1 to F4" =
   let expect = 0 in
   phys_equal expect result
 ;;
+
+let%test "parse arrow keys as CSI" =
+  let expect =
+    [ KeyEvent { code = Left; modifier = Normal }
+    ; KeyEvent { code = Down; modifier = Normal }
+    ; KeyEvent { code = Up; modifier = Normal }
+    ; KeyEvent { code = Right; modifier = Normal }
+    ]
+  in
+  let suffixes = [ 'D'; 'B'; 'A'; 'C' ] in
+  (* Arrow keys are sent as \x1B0x where x is one of the suffixes above *)
+  let results =
+    List.map suffixes ~f:(fun s ->
+      let buffer = Bytes.create 1024 in
+      Bytes.fill buffer ~pos:0 ~len:1 '\x1B';
+      Bytes.fill buffer ~pos:1 ~len:1 '[';
+      Bytes.fill buffer ~pos:2 ~len:1 s;
+      let len = 3 in
+      let idx = ref 0 in
+      process_buffer ~state:Initial ~buffer ~idx ~len)
+  in
+  let result =
+    List.length
+    @@ List.filter ~f:(fun (a, b) -> not ([%eq: event] a b))
+    @@ List.zip_exn results expect
+  in
+  let expect = 0 in
+  phys_equal expect result
+;;
+
+let%test "parse home meta key as CSI" =
+  let expect = KeyEvent { code = Home; modifier = Normal } in
+  let buffer = Bytes.create 1024 in
+  Bytes.fill buffer ~pos:0 ~len:1 '\x1B';
+  Bytes.fill buffer ~pos:1 ~len:1 '[';
+  Bytes.fill buffer ~pos:2 ~len:1 'H';
+  let len = 3 in
+  let idx = ref 0 in
+  let result = process_buffer ~state:Initial ~buffer ~idx ~len in
+  [%eq: event] expect result
+;;
+
+let%test "parse end meta key as CSI" =
+  let expect = KeyEvent { code = End; modifier = Normal } in
+  let buffer = Bytes.create 1024 in
+  Bytes.fill buffer ~pos:0 ~len:1 '\x1B';
+  Bytes.fill buffer ~pos:1 ~len:1 '[';
+  Bytes.fill buffer ~pos:2 ~len:1 'F';
+  let len = 3 in
+  let idx = ref 0 in
+  let result = process_buffer ~state:Initial ~buffer ~idx ~len in
+  [%eq: event] expect result
+;;
+
+let%test "parse backtab CSI" =
+  let expect = KeyEvent { code = BackTab; modifier = Shift } in
+  let buffer = Bytes.create 1024 in
+  Bytes.fill buffer ~pos:0 ~len:1 '\x1B';
+  Bytes.fill buffer ~pos:1 ~len:1 '[';
+  Bytes.fill buffer ~pos:2 ~len:1 'Z';
+  let len = 3 in
+  let idx = ref 0 in
+  let result = process_buffer ~state:Initial ~buffer ~idx ~len in
+  [%eq: event] expect result
+;;
+
+let%test "parse function keys F1 F2 F4 as CSI" =
+  let expect =
+    [ KeyEvent { code = F 1; modifier = Normal }
+    ; KeyEvent { code = F 2; modifier = Normal }
+    ; KeyEvent { code = F 4; modifier = Normal }
+    ]
+  in
+  let suffixes = [ 'P'; 'Q'; 'S' ] in
+  let results =
+    List.map suffixes ~f:(fun s ->
+      let buffer = Bytes.create 1024 in
+      Bytes.fill buffer ~pos:0 ~len:1 '\x1B';
+      Bytes.fill buffer ~pos:1 ~len:1 '[';
+      Bytes.fill buffer ~pos:2 ~len:1 s;
+      let len = 3 in
+      let idx = ref 0 in
+      process_buffer ~state:Initial ~buffer ~idx ~len)
+  in
+  let result =
+    List.length
+    @@ List.filter ~f:(fun (a, b) -> not ([%eq: event] a b))
+    @@ List.zip_exn results expect
+  in
+  let expect = 0 in
+  phys_equal expect result
+;;
