@@ -1,3 +1,5 @@
+open Core
+
 type t =
   { content : string list
   ; lines : int
@@ -5,7 +7,7 @@ type t =
 [@@deriving eq, show]
 
 let make source =
-  let content = String.split_on_char '\n' source in
+  let content = String.split_lines source in
   let lines = List.length content in
   { content; lines }
 ;;

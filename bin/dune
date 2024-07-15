@@ -1,4 +1,5 @@
 (executable
+ (package edml)
  (public_name edml)
  (name main)
  (libraries edml core fmt))

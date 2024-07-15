@@ -15,7 +15,7 @@ and cell_style =
   }
 [@@deriving eq, show { with_path = false }]
 
-and color = string [@@deriving eq, show]
+and color = Color of string [@@deriving eq, show]
 
 and cell =
   { symbol : char
@@ -82,9 +82,9 @@ let diff ~prev ~curr =
     List.rev !changes)
 ;;
 
-let fill buffer viewport (position : position) =
-  let open Text_buffer in
-  List.foldi buffer.text_object.content ~init:!viewport ~f:(fun row vp line ->
+let fill text_object viewport (position : position) =
+  let open Text_object in
+  List.foldi text_object.content ~init:viewport ~f:(fun row vp line ->
     let row = position.row + row in
     if row < vp.rows && row < position.row + position.height
     then
