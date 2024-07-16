@@ -103,6 +103,8 @@ let fill text_object viewport (position : position) =
   done
 ;;
 
+let copy vp = { vp with cells = Array.copy vp.cells }
+
 let pp_cells cells width =
   let height = (Array.length cells + width - 1) / width in
   let grid = Array.make_matrix ~dimx:height ~dimy:width ' ' in

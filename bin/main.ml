@@ -1,16 +1,8 @@
 open Core
 open Edml
+open Assert
 open Types
 open Viewport
-
-let editor =
-  ref
-  @@ Editor.make
-       ~pane:(Single (Pane.make ~buffer_id:1 ~id:1))
-       ~active_pane:0
-       ~viewport:(ref @@ Viewport.make ~cols:0 ~rows:0)
-       ~buffer:(Text_buffer.make (ref @@ Text_object.make "") 0)
-;;
 
 let setup_terminal _ =
   Ansi.Terminal.enable_raw_mode ();
@@ -134,17 +126,18 @@ let handle_action ~(editor : Editor.t) ~(pane : Pane.t) =
   editor
 ;;
 
-let rec event_loop (editor : Editor.t ref) =
-  let previous_viewport = !(!editor.viewport) in
-  let tab = List.nth_exn !editor.tabs !editor.active_tab in
+let rec event_loop (editor : Editor.t) =
+  Ansi.Cursor.hide ();
+  let previous_viewport = Viewport.copy !(editor.viewport) in
+  let tab = List.nth_exn editor.tabs editor.active_tab in
   let pane =
     match find_pane tab.panes tab.active_pane with
     | Some p -> p
-    | None -> failwith "unreachable"
+    | None -> unreachable ()
   in
-  editor := handle_action ~editor:!editor ~pane;
-  render_tab tab !editor;
-  render_viewport_diffs previous_viewport !(!editor.viewport);
+  let editor = handle_action ~editor ~pane in
+  render_tab tab editor;
+  render_viewport_diffs previous_viewport !(editor.viewport);
   let cursor = !(pane.cursor) in
   Ansi.Cursor.move_to ~col:cursor.col ~row:cursor.row;
   Ansi.Cursor.show ();
@@ -169,8 +162,8 @@ let () =
   let pane = Pane.make ~buffer_id:buffer.id ~id:pane_id in
   let dimensions = Ansi.Terminal.size () in
   let viewport = ref @@ Viewport.make ~cols:dimensions.cols ~rows:dimensions.rows in
-  editor := Editor.make ~pane:(Single pane) ~active_pane:pane.id ~buffer ~viewport;
-  render_tab (List.nth_exn !editor.tabs 0) !editor;
-  render_whole_viewport !(!editor.viewport);
+  let editor = Editor.make ~pane:(Single pane) ~active_pane:pane.id ~buffer ~viewport in
+  render_tab (List.nth_exn editor.tabs 0) editor;
+  render_whole_viewport !(editor.viewport);
   event_loop editor
 ;;
