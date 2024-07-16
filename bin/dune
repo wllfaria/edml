@@ -2,4 +2,5 @@
  (package edml)
  (public_name edml)
  (name main)
- (libraries edml core fmt))
+ (libraries edml)
+ (preprocess (pps ppx_deriving.eq)))

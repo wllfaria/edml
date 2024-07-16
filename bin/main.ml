@@ -1,6 +1,16 @@
 open Core
 open Edml
 open Types
+open Viewport
+
+let editor =
+  ref
+  @@ Editor.make
+       ~pane:(Single (Pane.make ~buffer_id:1 ~id:1))
+       ~active_pane:0
+       ~viewport:(ref @@ Viewport.make ~cols:0 ~rows:0)
+       ~buffer:(Text_buffer.make (ref @@ Text_object.make "") 0)
+;;
 
 let setup_terminal _ =
   Ansi.Terminal.enable_raw_mode ();
@@ -15,16 +25,18 @@ let render_change (change : Viewport.change) =
 ;;
 
 let render_whole_viewport viewport =
-  Array.iter ~f:render_change @@ Viewport.to_changes viewport
+  Array.iter ~f:render_change @@ Viewport.to_changes viewport;
+  Out_channel.flush stdout
 ;;
 
 let render_viewport_diffs prev curr =
-  List.iter ~f:render_change @@ Viewport.diff ~prev ~curr
+  let difs = Viewport.diff ~prev ~curr in
+  List.iter ~f:render_change @@ difs
 ;;
 
-let render_pane (pane : Pane.t) position (editor : Editor.t) ~viewport =
+let render_pane ~(pane : Pane.t) ~position ~(editor : Editor.t) =
   let buffer = List.nth_exn editor.buffers pane.buffer_id in
-  Viewport.fill buffer.text_object viewport position
+  Viewport.fill !(buffer.text_object) editor.viewport position
 ;;
 
 let distribute_dimension dimension ratios =
@@ -36,12 +48,11 @@ let distribute_dimension dimension ratios =
 ;;
 
 let rec render_split
-  ~col:_
+  ~col
   ~row
   ~width
   ~height
   ~(split : Editor.pane_branch)
-  ~(viewport : Viewport.t)
   ~(editor : Editor.t)
   =
   let make_position ~dimensions ~selector ~create =
@@ -56,7 +67,7 @@ let rec render_split
       make_position
         ~dimensions:heights
         ~selector:(fun pos -> pos.height + 1)
-        ~create:(fun anchor h -> { col = 0; row = anchor; width; height = h })
+        ~create:(fun anchor h -> { col; row = anchor; width; height = h })
     | Vertical ->
       let widths = distribute_dimension width split.ratios in
       make_position
@@ -64,42 +75,28 @@ let rec render_split
         ~selector:(fun pos -> pos.width + 1)
         ~create:(fun anchor w -> { col = anchor; row; width = w; height })
   in
-  List.foldi split.panes ~init:viewport ~f:(fun idx vp pane ->
-    let pane_pos = List.nth_exn positions idx in
+  List.iteri split.panes ~f:(fun idx pane ->
+    let position = List.nth_exn positions idx in
     match pane with
-    | Split b ->
+    | Split split ->
       render_split
-        ~col:pane_pos.col
-        ~row:pane_pos.row
-        ~width:pane_pos.width
-        ~height:pane_pos.height
-        ~split:b
-        ~viewport:vp
+        ~col:position.col
+        ~row:position.row
+        ~width:position.width
+        ~height:position.height
+        ~split
         ~editor
-    | Single p -> render_pane p pane_pos editor ~viewport:vp)
+    | Single pane -> render_pane ~pane ~position ~editor)
 ;;
 
 let render_tab (tab : Editor.tab) (editor : Editor.t) =
   let vp = editor.viewport in
-  let result =
-    match tab.panes with
-    | Split split ->
-      render_split
-        ~col:0
-        ~row:0
-        ~width:vp.cols
-        ~height:vp.rows
-        ~split
-        ~editor
-        ~viewport:editor.viewport
-    | Single pane ->
-      render_pane
-        pane
-        { col = 0; row = 0; width = vp.cols; height = vp.rows }
-        editor
-        ~viewport:editor.viewport
-  in
-  result
+  match tab.panes with
+  | Split split ->
+    render_split ~col:0 ~row:0 ~width:!vp.cols ~height:!vp.rows ~split ~editor
+  | Single pane ->
+    let position = { col = 0; row = 0; width = !vp.cols; height = !vp.rows } in
+    render_pane ~pane ~position ~editor
 ;;
 
 let rec find_pane (node : Editor.pane_tree) needle =
@@ -109,32 +106,49 @@ let rec find_pane (node : Editor.pane_tree) needle =
   | _ -> None
 ;;
 
-let rec event_loop (editor : Editor.t) =
-  Ansi.Cursor.hide ();
-  let previous_viewport = editor.viewport in
-  let tab = List.nth_exn editor.tabs editor.active_tab in
-  let editor = { editor with viewport = render_tab tab editor } in
-  render_viewport_diffs previous_viewport editor.viewport;
-  let pane =
-    match find_pane tab.panes tab.active_pane with
-    | Some p -> p
-    | None -> failwith "unreachable"
-  in
-  let cursor = !(pane.cursor) in
-  Ansi.Cursor.move_to ~col:cursor.col ~row:cursor.row;
-  Ansi.Cursor.show ();
-  Out_channel.flush stdout;
+let handle_action ~(editor : Editor.t) ~(pane : Pane.t) =
   let maybe_action =
     let open Event_handler in
     match Ansi.Event.read () with
     | KeyEvent key_event -> handle_key_event key_event editor.mode
     | _ -> failwith "lol"
   in
-  (match maybe_action with
-   | Some (Cursor cursor_action) ->
-     let buffer = List.nth_exn editor.buffers pane.buffer_id in
-     pane.cursor := Cursor.handle_action cursor_action cursor buffer.text_object
-   | None -> ());
+  let editor =
+    match maybe_action with
+    | Some (Cursor cursor_action) ->
+      let buffer = List.nth_exn editor.buffers pane.buffer_id in
+      let text_object = !(buffer.text_object) in
+      pane.cursor := Cursor.handle_action cursor_action !(pane.cursor) text_object;
+      editor
+    | Some (ChangeMode mode) -> { editor with mode }
+    | Some (TextObject action) ->
+      let buffer = List.nth_exn editor.buffers pane.buffer_id in
+      let cursor = !(pane.cursor) in
+      let anchor = { col = cursor.col; row = cursor.row } in
+      let text_object = !(buffer.text_object) in
+      buffer.text_object := Text_object.handle_action ~action ~text_object ~anchor;
+      pane.cursor := Cursor.move_right !(pane.cursor) text_object;
+      editor
+    | None -> editor
+  in
+  editor
+;;
+
+let rec event_loop (editor : Editor.t ref) =
+  let previous_viewport = !(!editor.viewport) in
+  let tab = List.nth_exn !editor.tabs !editor.active_tab in
+  let pane =
+    match find_pane tab.panes tab.active_pane with
+    | Some p -> p
+    | None -> failwith "unreachable"
+  in
+  editor := handle_action ~editor:!editor ~pane;
+  render_tab tab !editor;
+  render_viewport_diffs previous_viewport !(!editor.viewport);
+  let cursor = !(pane.cursor) in
+  Ansi.Cursor.move_to ~col:cursor.col ~row:cursor.row;
+  Ansi.Cursor.show ();
+  Out_channel.flush stdout;
   event_loop editor
 ;;
 
@@ -148,17 +162,15 @@ let () =
     | Some content -> content
     | None -> ""
   in
-  let text_object = Text_object.make file_content in
+  let text_object = ref @@ Text_object.make file_content in
   let buffer_id = Utils.next_id ~id_ref:Utils.buffer_id in
   let buffer = Text_buffer.make text_object buffer_id in
   let pane_id = Utils.next_id ~id_ref:Utils.pane_id in
   let pane = Pane.make ~buffer_id:buffer.id ~id:pane_id in
   let dimensions = Ansi.Terminal.size () in
-  let viewport = Viewport.make ~cols:dimensions.cols ~rows:dimensions.rows in
-  let editor = Editor.make ~pane:(Single pane) ~active_pane:pane.id ~buffer ~viewport in
-  let editor =
-    { editor with viewport = render_tab (List.nth_exn editor.tabs 0) editor }
-  in
-  render_whole_viewport editor.viewport;
+  let viewport = ref @@ Viewport.make ~cols:dimensions.cols ~rows:dimensions.rows in
+  editor := Editor.make ~pane:(Single pane) ~active_pane:pane.id ~buffer ~viewport;
+  render_tab (List.nth_exn !editor.tabs 0) !editor;
+  render_whole_viewport !(!editor.viewport);
   event_loop editor
 ;;

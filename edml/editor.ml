@@ -1,6 +1,6 @@
 type editor =
   { tabs : tab list
-  ; viewport : Viewport.t
+  ; viewport : Viewport.t ref
   ; mode : mode
   ; buffers : Text_buffer.t list
   ; active_tab : int
@@ -9,11 +9,6 @@ type editor =
 and mode =
   | Normal
   | Insert
-
-and anchor =
-  { col : int
-  ; row : int
-  }
 
 and tab =
   { panes : pane_tree

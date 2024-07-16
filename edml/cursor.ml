@@ -7,7 +7,7 @@ type t =
   }
 [@@deriving eq, show { with_path = false }]
 
-type cursor_action =
+type action =
   | MoveLeft
   | MoveRight
   | MoveUp

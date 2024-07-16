@@ -1,3 +1,8 @@
 (library
-  (name ewww)
-  (libraries))
+  (name edml)
+  (inline_tests)
+  (libraries core ansi)
+  (preprocess (pps
+    ppx_inline_test
+    ppx_deriving.show
+    ppx_deriving.eq)))

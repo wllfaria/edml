@@ -1,5 +1,5 @@
 open Core
-open Viewport
+open Edml.Viewport
 
 let%test "should create correct sized viewport" =
   let expected_len = 100 in
@@ -87,8 +87,8 @@ let%test "should make new vp with correct cell" =
     ; cols = 2
     }
   in
-  let vp = make ~cols:2 ~rows:2 in
-  let result = set_cell 'x' ~col:0 ~row:1 ~vp in
-  let result = set_cell 'x' ~col:1 ~row:1 ~vp:result in
-  [%eq: t] result expect
+  let vp = ref @@ make ~cols:2 ~rows:2 in
+  set_cell 'x' ~col:0 ~row:1 ~vp;
+  set_cell 'x' ~col:1 ~row:1 ~vp;
+  [%eq: t] !vp expect
 ;;

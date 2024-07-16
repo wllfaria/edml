@@ -1,3 +1,4 @@
+open Edml
 open Cursor
 
 let make_text_object () =

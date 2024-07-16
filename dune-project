@@ -31,11 +31,3 @@
  (tags
   (topics terminal editor "text editor")))
 
-(package
- (name ewww)
- (synopsis "silly terminal text editor")
- (description "in ocaml!")
- (depends ocaml dune)
- (tags
-  (topics terminal editor "text editor")))
-

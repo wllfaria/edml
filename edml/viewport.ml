@@ -1,5 +1,12 @@
 open Core
-open Types
+
+type position =
+  { row : int
+  ; col : int
+  ; width : int
+  ; height : int
+  }
+[@@deriving show { with_path = false }]
 
 type t =
   { cells : cell array
@@ -32,6 +39,10 @@ and change =
 
 let make_cell () = { symbol = ' '; styles = { fg = None; bg = None; bold = false } }
 
+let make_cell_with_symbol symbol =
+  { symbol; styles = { fg = None; bg = None; bold = false } }
+;;
+
 let make ~cols ~rows =
   let cells = Array.create ~len:(cols * rows) (make_cell ()) in
   { cells; cols; rows }
@@ -40,12 +51,8 @@ let make ~cols ~rows =
 let normalize_col_row col row total_cols = (row * total_cols) + col
 
 let set_cell char ~col ~row ~vp =
-  let pos = normalize_col_row col row vp.cols in
-  let new_cells =
-    Array.mapi vp.cells ~f:(fun idx cell ->
-      if phys_equal idx pos then { cell with symbol = char } else cell)
-  in
-  { vp with cells = new_cells }
+  let pos = normalize_col_row col row !vp.cols in
+  !vp.cells.(pos) <- make_cell_with_symbol char
 ;;
 
 let set_text text ~col ~row ~vp =
@@ -77,23 +84,23 @@ let diff ~prev ~curr =
       let row = idx / prev.cols in
       let col = idx mod prev.cols in
       let other = curr.cells.(idx) in
-      if not (phys_equal cell other)
+      if not ([%eq: cell] cell other)
       then changes := { cell = other; col; row } :: !changes);
     List.rev !changes)
 ;;
 
 let fill text_object viewport (position : position) =
   let open Text_object in
-  List.foldi text_object.content ~init:viewport ~f:(fun row vp line ->
-    let row = position.row + row in
-    if row < vp.rows && row < position.row + position.height
-    then
-      String.foldi line ~init:vp ~f:(fun col vp char ->
-        let col = col + position.col in
-        if col < vp.cols && col < position.col + position.width
-        then set_cell char ~col ~row ~vp
-        else vp)
-    else vp)
+  Ansi.Cursor.move_to ~col:0 ~row:5;
+  let max_row = position.height - position.row in
+  for row = 0 to max_row - 1 do
+    let line = List.nth_exn text_object.content row in
+    let max_col = min (position.width - position.col) (String.length line) in
+    for col = 0 to max_col - 1 do
+      let char = String.get line col in
+      set_cell char ~col:(position.col + col) ~row:(position.row + row) ~vp:viewport
+    done
+  done
 ;;
 
 let pp_cells cells width =

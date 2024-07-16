@@ -1,17 +1,14 @@
-open Types
 open Core
+open Edml
 
 let%test "fill viewport respects position" =
   let open Viewport in
   let rows = 3 in
   let cols = 8 in
-  let cells = Array.create ~len:(rows * cols) (make_cell ()) in
-  let content = "Hello World!\ngoobye world!\nsend help!" in
+  let content = "Hello World!\ngoodbye world!\nsend help!" in
   let text_object = Text_object.make content in
-  let vp = { cells; rows; cols } in
-  let result =
-    Viewport.fill text_object vp { col = 5; row = 0; width = cols; height = rows }
-  in
+  let vp = ref @@ Viewport.make ~rows ~cols in
+  Viewport.fill text_object vp { col = 5; row = 0; width = cols; height = rows };
   let styles = { fg = None; bg = None; bold = false } in
   let expect =
     { rows
@@ -44,7 +41,7 @@ let%test "fill viewport respects position" =
         |]
     }
   in
-  [%eq: t] expect result
+  [%eq: t] expect !vp
 ;;
 
 (* let%test "should render correct ratios" = *)
