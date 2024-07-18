@@ -117,13 +117,13 @@ let%test "should scroll correctly" =
   in
   let expects = [| expected_first; expected_second |] in
   let text_object = Text_object.make "aaaaaa\nbbbbbb\nxxxxxx\nyyyyyy" in
-  let cursor = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
+  let cursor = { row = 0; col = 0; real_col = 0; offset_col = 0; offset_row = 0 } in
   let pos : position = { row = 0; col = 0; width = 2; height = 3 } in
   let vp = ref @@ make ~cols:pos.width ~rows:pos.height in
   Viewport.fill text_object cursor vp pos;
   let cells = Array.copy !vp.cells in
   let first_result = { cells; rows = 2; cols = 2 } in
-  let cursor = { row = 3; col = 0; real_col = 0; offset_row = 1 } in
+  let cursor = { row = 3; col = 0; real_col = 0; offset_col = 0; offset_row = 1 } in
   Viewport.fill text_object cursor vp pos;
   let cells = Array.copy !vp.cells in
   let second_result = { cells; rows = 2; cols = 2 } in

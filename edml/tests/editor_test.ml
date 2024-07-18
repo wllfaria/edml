@@ -9,7 +9,7 @@ let%test "fill viewport respects position" =
   let content = "Hello World!\ngoodbye world!\nsend help!" in
   let text_object = Text_object.make content in
   let vp = ref @@ Viewport.make ~rows ~cols in
-  let cursor = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
+  let cursor = { row = 0; col = 0; real_col = 0; offset_col = 0; offset_row = 0 } in
   Viewport.fill text_object cursor vp { col = 5; row = 0; width = cols; height = rows };
   let styles = { fg = None; bg = None; bold = false } in
   let expect =

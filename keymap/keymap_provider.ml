@@ -92,3 +92,12 @@ let%test "should buffer a action when there is a match but continues" =
   let results = [ keymap_match; action_match ] in
   List.for_all results ~f:(fun res -> res)
 ;;
+
+let%test "should return correct action" =
+  let key_event = { code = Char 'h'; modifier = Normal } in
+  let result = from_normal_mode key_event in
+  let expected = Some (CursorAction MoveLeft) in
+  let action_match = [%eq: action option] result expected in
+  let results = [ action_match ] in
+  List.for_all results ~f:(fun res -> res)
+;;

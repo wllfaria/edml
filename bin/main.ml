@@ -134,7 +134,7 @@ let handle_action ~(editor : Editor.t) ~(pane : Pane.t) =
 let render_cursor_in_view ~cursor =
   let open Cursor in
   let row = cursor.row - cursor.offset_row in
-  let col = cursor.col in
+  let col = cursor.col - cursor.offset_col in
   Ansi.Cursor.move_to ~col ~row
 ;;
 

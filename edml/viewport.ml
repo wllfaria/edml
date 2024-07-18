@@ -96,14 +96,27 @@ let fill text_object cursor viewport (position : position) =
   let content_onscreen = List.sub text_object.content ~pos:cursor.offset_row ~len in
   for row = 0 to len - 1 do
     let line = List.nth_exn content_onscreen row in
-    let max_col = min (position.width - position.col) (String.length line) in
+    let line_len = String.length line in
+    let start_col = cursor.offset_col in
+    let end_col = min line_len (start_col + (position.width - position.col)) in
+    let line_onscreen =
+      if start_col < line_len
+      then String.sub line ~pos:start_col ~len:(end_col - start_col)
+      else ""
+    in
+    let max_col = String.length line_onscreen in
     for col = 0 to max_col - 1 do
-      let char = String.get line col in
+      let char = String.get line_onscreen col in
       set_cell char ~col:(position.col + col) ~row:(position.row + row) ~vp:viewport
     done;
     for col = max_col to position.width - position.col - 1 do
       set_cell ' ' ~col:(position.col + col) ~row:(position.row + row) ~vp:viewport
     done
+  done;
+  let remaining_rows = min (!viewport.rows - len) !viewport.rows in
+  let remaining_rows = if remaining_rows < 0 then 0 else remaining_rows in
+  for row = len to remaining_rows + len - 1 do
+    set_cell '~' ~col:0 ~row ~vp:viewport
   done
 ;;
 
