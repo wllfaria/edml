@@ -1,3 +1,4 @@
+open Core
 open Edml
 open Cursor
 
@@ -10,115 +11,140 @@ int main(void) {
 ;;
 
 let%test "move left with available space" =
-  let cursor = { row = 0; col = 10; real_col = 9 } in
-  let expect = { row = 0; col = 9; real_col = 9 } in
-  let result = move_left cursor in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let text_object = make_text_object () in
+  let cursor = { row = 0; col = 10; real_col = 9; offset_row = 0 } in
+  let expect = { row = 0; col = 9; real_col = 9; offset_row = 0 } in
+  let result = move_left cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move left without available space" =
-  let cursor = { row = 1; col = 0; real_col = 0 } in
-  let expect = { row = 1; col = 0; real_col = 0 } in
-  let result = move_left cursor in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let text_object = make_text_object () in
+  let cursor = { row = 1; col = 0; real_col = 0; offset_row = 0 } in
+  let expect = { row = 1; col = 0; real_col = 0; offset_row = 0 } in
+  let result = move_left cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move down to line with same or bigger size" =
-  let cursor = { row = 0; col = 0; real_col = 0 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 1; col = 0; real_col = 0 } in
-  let result = move_down cursor text_object in
+  let expect = { row = 1; col = 0; real_col = 0; offset_row = 0 } in
+  let result = move_down cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move down to line with smaller size" =
-  let cursor = { row = 0; col = 10; real_col = 10 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 0; col = 10; real_col = 10; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 1; col = 0; real_col = 10 } in
-  let result = move_down cursor text_object in
+  let expect = { row = 1; col = 0; real_col = 10; offset_row = 0 } in
+  let result = move_down cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move down to line with smaller size, then to line with bigger size" =
-  let cursor = { row = 0; col = 10; real_col = 10 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 0; col = 10; real_col = 10; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 1; col = 0; real_col = 10 } in
-  let result = move_down cursor text_object in
+  let expect = { row = 1; col = 0; real_col = 10; offset_row = 0 } in
+  let result = move_down cursor text_object dimensions in
   match [%eq: t] expect result with
   | false -> false
   | true ->
     let cursor = expect in
-    let expect = { row = 2; col = 10; real_col = 10 } in
-    let result = move_down cursor text_object in
+    let expect = { row = 2; col = 10; real_col = 10; offset_row = 0 } in
+    let result = move_down cursor text_object dimensions in
     [%eq: t] expect result
 ;;
 
 let%test "move down to line with smaller size, then to line with enough size" =
-  let cursor = { row = 0; col = 17; real_col = 17 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 0; col = 17; real_col = 17; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 1; col = 0; real_col = 17 } in
-  let result = move_down cursor text_object in
+  let expect = { row = 1; col = 0; real_col = 17; offset_row = 0 } in
+  let result = move_down cursor text_object dimensions in
   match [%eq: t] expect result with
   | false -> false
   | true ->
     let cursor = expect in
-    let expect = { row = 2; col = 16; real_col = 17 } in
-    let result = move_down cursor text_object in
+    let expect = { row = 2; col = 16; real_col = 17; offset_row = 0 } in
+    let result = move_down cursor text_object dimensions in
     [%eq: t] expect result
 ;;
 
 let%test "move down without lines below" =
-  let cursor = { row = 4; col = 0; real_col = 0 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 4; col = 0; real_col = 0; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 4; col = 0; real_col = 0 } in
-  let result = move_down cursor text_object in
+  let expect = { row = 4; col = 0; real_col = 0; offset_row = 0 } in
+  let result = move_down cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move up with lines above" =
-  let cursor = { row = 1; col = 0; real_col = 0 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 1; col = 0; real_col = 0; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 0; col = 0; real_col = 0 } in
-  let result = move_up cursor text_object in
+  let expect = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
+  let result = move_up cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move up without lines above" =
-  let cursor = { row = 0; col = 0; real_col = 0 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 0; col = 0; real_col = 0 } in
-  let result = move_up cursor text_object in
+  let expect = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
+  let result = move_up cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move up to smaller line above" =
-  let cursor = { row = 2; col = 10; real_col = 10 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 2; col = 10; real_col = 10; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 1; col = 0; real_col = 10 } in
-  let result = move_up cursor text_object in
+  let expect = { row = 1; col = 0; real_col = 10; offset_row = 0 } in
+  let result = move_up cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move up to bigger line above" =
-  let cursor = { row = 1; col = 0; real_col = 0 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 1; col = 0; real_col = 0; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 0; col = 0; real_col = 0 } in
-  let result = move_up cursor text_object in
+  let expect = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
+  let result = move_up cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move right with available space" =
-  let cursor = { row = 0; col = 0; real_col = 0 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 0; col = 1; real_col = 1 } in
-  let result = move_right cursor text_object in
+  let expect = { row = 0; col = 1; real_col = 1; offset_row = 0 } in
+  let result = move_right cursor text_object dimensions in
   [%eq: t] expect result
 ;;
 
 let%test "move right at the end of the line" =
-  let cursor = { row = 0; col = 18; real_col = 18 } in
+  let dimensions : Ansi.Terminal.dimensions = { rows = 20; cols = 20 } in
+  let cursor = { row = 0; col = 18; real_col = 18; offset_row = 0 } in
   let text_object = make_text_object () in
-  let expect = { row = 0; col = 18; real_col = 18 } in
-  let result = move_right cursor text_object in
+  let expect = { row = 0; col = 18; real_col = 18; offset_row = 0 } in
+  let result = move_right cursor text_object dimensions in
+  [%eq: t] expect result
+;;
+
+let%test "scrolling down works as expected" =
+  let dimensions : Ansi.Terminal.dimensions = { rows = 40; cols = 20 } in
+  let cursor = { row = 0; col = 0; real_col = 0; offset_row = 0 } in
+  let content = String.make 71 '\n' in
+  let text_object = Text_object.make content in
+  let expect = { row = 70; col = 0; real_col = 0; offset_row = 30 } in
+  let result = move_to_bottom cursor text_object dimensions in
   [%eq: t] expect result
 ;;

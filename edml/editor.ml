@@ -5,10 +5,12 @@ type editor =
   ; buffers : Text_buffer.t list
   ; active_tab : int
   }
+[@@deriving eq, show { with_path = false }]
 
 and mode =
   | Normal
   | Insert
+[@@deriving eq, show { with_path = false }]
 
 and tab =
   { panes : pane_tree
@@ -18,16 +20,19 @@ and tab =
 and pane_tree =
   | Single of Pane.t
   | Split of pane_branch
+[@@deriving eq, show { with_path = false }]
 
 and pane_branch =
   { direction : direction
   ; ratios : float list
   ; panes : pane_tree list
   }
+[@@deriving eq, show { with_path = false }]
 
 and direction =
   | Horizontal
   | Vertical
+[@@deriving eq, show { with_path = false }]
 
 type t = editor
 

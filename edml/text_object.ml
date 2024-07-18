@@ -2,13 +2,16 @@ open Core
 open Assert
 open Types
 
-type action = TypeChar of char
+type action =
+  | TypeChar of char
+  | DeleteLine
+[@@deriving eq, show { with_path = false }]
 
 type t =
   { content : string list
   ; lines : int
   }
-[@@deriving eq, show]
+[@@deriving eq, show { with_path = false }]
 
 let make source =
   let content = String.split_lines source in
@@ -41,6 +44,7 @@ let insert_char ~char ~text_object ~anchor =
 let handle_action ~text_object ~action ~anchor =
   match action with
   | TypeChar char -> insert_char ~char ~text_object ~anchor
+  | DeleteLine -> text_object
 ;;
 
 let%test _ =
