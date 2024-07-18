@@ -7,14 +7,21 @@ let buffered_keymap = ref None
 let buffered_action = ref None
 
 let normal_mode_mappings =
+  let open Edml.Cursor in
+  let open Edml.Text_object in
   let mappings =
-    [ "h", CursorAction Edml.Cursor.MoveLeft
-    ; "j", CursorAction Edml.Cursor.MoveDown
-    ; "k", CursorAction Edml.Cursor.MoveUp
-    ; "l", CursorAction Edml.Cursor.MoveRight
-    ; "G", CursorAction Edml.Cursor.MoveToBottom
-    ; "gg", CursorAction Edml.Cursor.MoveToTop
-    ; "dd", TextObjectAction Edml.Text_object.DeleteLine
+    [ "h", [ CursorAction MoveLeft ]
+    ; "j", [ CursorAction MoveDown ]
+    ; "k", [ CursorAction MoveUp ]
+    ; "l", [ CursorAction MoveRight ]
+    ; "G", [ CursorAction MoveToBottom ]
+    ; "gg", [ CursorAction MoveToTop ]
+    ; "0", [ CursorAction MoveToLineStart ]
+    ; "$", [ CursorAction MoveToLineEnd ]
+    ; "dd", [ TextObjectAction DeleteLine ]
+    ; "D", [ TextObjectAction DeleteUntilEOL ]
+    ; "x", [ TextObjectAction DeleteCurrChar ]
+    ; "X", [ TextObjectAction DeletePrevChar; CursorAction MoveLeft ]
     ]
   in
   let trie = Trie.empty () in
@@ -86,9 +93,9 @@ let%test "should buffer a action when there is a match but continues" =
   let result = from_normal_mode key_event in
   let temp_key = !buffered_keymap in
   buffered_keymap := None;
-  let expected = Some (TextObjectAction DeleteLine) in
+  let expected = Some [ TextObjectAction DeleteLine ] in
   let keymap_match = [%eq: string option] temp_key None in
-  let action_match = [%eq: action option] result expected in
+  let action_match = [%eq: action list option] result expected in
   let results = [ keymap_match; action_match ] in
   List.for_all results ~f:(fun res -> res)
 ;;
@@ -96,8 +103,8 @@ let%test "should buffer a action when there is a match but continues" =
 let%test "should return correct action" =
   let key_event = { code = Char 'h'; modifier = Normal } in
   let result = from_normal_mode key_event in
-  let expected = Some (CursorAction MoveLeft) in
-  let action_match = [%eq: action option] result expected in
+  let expected = Some [ CursorAction MoveLeft ] in
+  let action_match = [%eq: action list option] result expected in
   let results = [ action_match ] in
   List.for_all results ~f:(fun res -> res)
 ;;

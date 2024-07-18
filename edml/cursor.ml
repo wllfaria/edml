@@ -16,6 +16,8 @@ type action =
   | MoveDown
   | MoveToBottom
   | MoveToTop
+  | MoveToLineStart
+  | MoveToLineEnd
 [@@deriving eq, show { with_path = false }]
 
 let make () = { col = 0; row = 0; real_col = 0; offset_col = 0; offset_row = 0 }
@@ -59,7 +61,7 @@ let move_right cursor text_object vp_dimensions =
   let open Text_object in
   let line = List.nth_exn text_object.content cursor.row in
   let cursor =
-    if cursor.col < String.length line
+    if cursor.col < String.length line - 1
     then { cursor with col = cursor.col + 1 }
     else cursor
   in
@@ -106,6 +108,21 @@ let move_to_bottom cursor text_object vp_dimensions =
   adjust_column cursor line vp_dimensions
 ;;
 
+let move_to_line_start cursor text_object vp_dimensions =
+  let open Text_object in
+  let cursor = { cursor with col = 0 } in
+  let line = List.nth_exn text_object.content cursor.row in
+  adjust_column cursor line vp_dimensions
+;;
+
+let move_to_line_end cursor text_object vp_dimensions =
+  let open Text_object in
+  let line = List.nth_exn text_object.content cursor.row in
+  let cursor = { cursor with col = String.length line - 1 } in
+  let cursor = adjust_row cursor vp_dimensions in
+  adjust_column cursor line vp_dimensions
+;;
+
 let handle_action action cursor text_object vp_dimensions =
   match action with
   | MoveLeft -> move_left cursor text_object vp_dimensions
@@ -114,4 +131,6 @@ let handle_action action cursor text_object vp_dimensions =
   | MoveDown -> move_down cursor text_object vp_dimensions
   | MoveToTop -> move_to_top cursor text_object vp_dimensions
   | MoveToBottom -> move_to_bottom cursor text_object vp_dimensions
+  | MoveToLineStart -> move_to_line_start cursor text_object vp_dimensions
+  | MoveToLineEnd -> move_to_line_end cursor text_object vp_dimensions
 ;;

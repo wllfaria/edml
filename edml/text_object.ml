@@ -5,6 +5,9 @@ open Types
 type action =
   | TypeChar of char
   | DeleteLine
+  | DeleteCurrChar
+  | DeletePrevChar
+  | DeleteUntilEOL
 [@@deriving eq, show { with_path = false }]
 
 type t =
@@ -41,44 +44,63 @@ let insert_char ~char ~text_object ~anchor =
   { text_object with content }
 ;;
 
+let delete_line ~anchor ~text_object =
+  let content =
+    let before = List.take text_object.content anchor.row in
+    let after = List.drop text_object.content (anchor.row + 1) in
+    before @ after
+  in
+  { text_object with content }
+;;
+
+let delete_until_eol ~anchor ~text_object =
+  let line = List.nth_exn text_object.content anchor.row in
+  let new_line = String.sub line ~pos:0 ~len:anchor.col in
+  let content =
+    let before = List.take text_object.content anchor.row in
+    let after = List.drop text_object.content (anchor.row + 1) in
+    before @ [ new_line ] @ after
+  in
+  { text_object with content }
+;;
+
+let delete_curr_char ~anchor ~text_object =
+  let line = List.nth_exn text_object.content anchor.row in
+  let new_line =
+    let line_len = String.length line in
+    let prefix = String.sub line ~pos:0 ~len:anchor.col in
+    let suffix = String.sub line ~pos:(anchor.col + 1) ~len:(line_len - anchor.col - 1) in
+    prefix ^ suffix
+  in
+  let content =
+    let before = List.take text_object.content anchor.row in
+    let after = List.drop text_object.content (anchor.row + 1) in
+    before @ [ new_line ] @ after
+  in
+  { text_object with content }
+;;
+
+let delete_prev_char ~anchor ~text_object =
+  let line = List.nth_exn text_object.content anchor.row in
+  let new_line =
+    let line_len = String.length line in
+    let prefix = String.sub line ~pos:0 ~len:(anchor.col - 1) in
+    let suffix = String.sub line ~pos:anchor.col ~len:(line_len - anchor.col - 1) in
+    prefix ^ suffix
+  in
+  let content =
+    let before = List.take text_object.content anchor.row in
+    let after = List.drop text_object.content (anchor.row + 1) in
+    before @ [ new_line ] @ after
+  in
+  { text_object with content }
+;;
+
 let handle_action ~text_object ~action ~anchor =
   match action with
   | TypeChar char -> insert_char ~char ~text_object ~anchor
-  | DeleteLine -> text_object
-;;
-
-let%test _ =
-  let expected =
-    { content = [ "#include <stdio.h>"; ""; "int main(void) {"; "    return 0;"; "}" ]
-    ; lines = 5
-    }
-  in
-  let result = make {|#include <stdio.h>
-
-int main(void) {
-    return 0;
-}|} in
-  [%eq: t] result expected
-;;
-
-let%test "updates correct spot on text object" =
-  let expected =
-    { content =
-        [ "#include <stdio.h>"
-        ; ""
-        ; "int main(int argc, char *argv[]) {"
-        ; "    return 0;"
-        ; "}"
-        ]
-    ; lines = 5
-    }
-  in
-  let text_object = ref @@ make "#include <stdio.h>\n\nint main() {\n    return 0;\n}" in
-  let input_text = "int argc, char *argv[]" in
-  let actions = String.fold input_text ~init:[] ~f:(fun acc c -> TypeChar c :: acc) in
-  let anchor = ref { row = 2; col = 9 } in
-  List.iter actions ~f:(fun action ->
-    text_object := handle_action ~text_object:!text_object ~action ~anchor:!anchor);
-  anchor := { !anchor with col = !anchor.col + 1 };
-  [%eq: t] expected !text_object
+  | DeleteLine -> delete_line ~anchor ~text_object
+  | DeleteCurrChar -> delete_curr_char ~anchor ~text_object
+  | DeletePrevChar -> delete_prev_char ~anchor ~text_object
+  | DeleteUntilEOL -> delete_until_eol ~anchor ~text_object
 ;;

@@ -3,14 +3,14 @@ open Core
 type node =
   { final : bool
   ; value : char
-  ; action : Types.action option
+  ; action : Types.action list option
   ; childrens : node list
   }
 [@@deriving eq, show { with_path = false }]
 
 type query_result =
   { continues : bool
-  ; action : Types.action option
+  ; action : Types.action list option
   }
 [@@deriving eq, show { with_path = false }]
 

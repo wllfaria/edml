@@ -104,28 +104,31 @@ let handle_action ~(editor : Editor.t) ~(pane : Pane.t) =
   let dimensions : Ansi.Terminal.dimensions =
     { rows = !(editor.viewport).rows; cols = !(editor.viewport).cols }
   in
-  let maybe_action =
+  let maybe_actions =
     match Ansi.Event.read () with
     | KeyEvent key_event -> Keymaps.Event_handler.handle_key_event key_event editor.mode
-    | _ -> failwith "lol"
+    | _ -> Assert.todo ()
   in
   let editor =
-    match maybe_action with
-    | Some (CursorAction cursor_action) ->
-      let buffer = List.nth_exn editor.buffers pane.buffer_id in
-      let text_object = !(buffer.text_object) in
-      pane.cursor
-      := Cursor.handle_action cursor_action !(pane.cursor) text_object dimensions;
-      editor
-    | Some (ChangeMode mode) -> { editor with mode }
-    | Some (TextObjectAction action) ->
-      let buffer = List.nth_exn editor.buffers pane.buffer_id in
-      let cursor = !(pane.cursor) in
-      let anchor = { col = cursor.col; row = cursor.row } in
-      let text_object = !(buffer.text_object) in
-      buffer.text_object := Text_object.handle_action ~action ~text_object ~anchor;
-      pane.cursor := Cursor.move_right !(pane.cursor) text_object dimensions;
-      editor
+    match maybe_actions with
+    | Some actions ->
+      List.fold actions ~init:editor ~f:(fun acc action ->
+        match action with
+        | CursorAction cursor_action ->
+          let buffer = List.nth_exn acc.buffers pane.buffer_id in
+          let text_object = !(buffer.text_object) in
+          pane.cursor
+          := Cursor.handle_action cursor_action !(pane.cursor) text_object dimensions;
+          acc
+        | ChangeMode mode -> { acc with mode }
+        | TextObjectAction action ->
+          let buffer = List.nth_exn editor.buffers pane.buffer_id in
+          let cursor = !(pane.cursor) in
+          let anchor = { col = cursor.col; row = cursor.row } in
+          let text_object = !(buffer.text_object) in
+          buffer.text_object := Text_object.handle_action ~action ~text_object ~anchor;
+          pane.cursor := Cursor.move_right !(pane.cursor) text_object dimensions;
+          acc)
     | None -> editor
   in
   editor
