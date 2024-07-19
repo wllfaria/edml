@@ -1,14 +1,37 @@
+; (library
+;   (name tree_sitter)
+;   (libraries ctypes ctypes-foreign)
+;   (foreign_stubs 
+;     (language c) (names tree_sitter)
+;     (flags
+;       :standard 
+;       -I${ocaml:include_dir}
+;       -I%{env:TREE_SITTER_INC=/usr/local/lib}
+;       -L%{env:TREE_SITTER_LIB=/usr/local/include}
+;       -ltree-sitter))
+;   (c_library_flags
+;     (-L%{env:TREE_SITTER_LIB=/usr/local/include}
+;      -Wl,-rpath,%{env:TREE_SITTER_LIB=/usr/local/include})))
 (library
   (name tree_sitter)
-  (libraries)
-  (foreign_stubs 
-    (language c) (names tree_sitter)
-    (flags
-      :standard 
-      -I${ocaml:include_dir}
-      -I%{env:TREE_SITTER_INC=/usr/local/lib}
-      -L%{env:TREE_SITTER_LIB=/usr/local/include}
-      -ltree-sitter))
-  (c_library_flags
-    (-L%{env:TREE_SITTER_LIB=/usr/local/include}
-     -Wl,-rpath,%{env:TREE_SITTER_LIB=/usr/local/include})))
+  (modules tree_sitter)
+  (libraries ctypes ctypes.stubs))
+
+(executable
+  (name stub_generator)
+  (modules stub_generator)
+  (libraries ctypes ctypes.stubs tree_sitter))
+
+(rule
+  (targets tree_sitter_stubs.c tree_sitter_generated.ml)
+  (deps stub_generator.exe)
+  (action (run %{deps})))
+
+(library
+  (name tree_sitter_generated)
+  (modules tree_sitter_generated)
+  (c_library_flags -ltree-sitter)
+  (foreign_stubs
+    (language c)
+    (names tree_sitter_stubs))
+  (libraries ctypes.stubs))
