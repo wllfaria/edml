@@ -1,0 +1,14 @@
+(library
+  (name tree_sitter)
+  (libraries)
+  (foreign_stubs 
+    (language c) (names tree_sitter)
+    (flags
+      :standard 
+      -I${ocaml:include_dir}
+      -I%{env:TREE_SITTER_INC=/usr/local/lib}
+      -L%{env:TREE_SITTER_LIB=/usr/local/include}
+      -ltree-sitter))
+  (c_library_flags
+    (-L%{env:TREE_SITTER_LIB=/usr/local/include}
+     -Wl,-rpath,%{env:TREE_SITTER_LIB=/usr/local/include})))

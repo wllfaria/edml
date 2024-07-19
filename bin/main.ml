@@ -17,8 +17,7 @@ let render_change (change : Viewport.change) =
 ;;
 
 let render_whole_viewport viewport =
-  Array.iter ~f:render_change @@ Viewport.to_changes viewport;
-  Out_channel.flush stdout
+  Array.iter ~f:render_change @@ Viewport.to_changes viewport
 ;;
 
 let render_viewport_diffs prev curr =
@@ -180,5 +179,7 @@ let () =
   let editor = Editor.make ~pane:(Single pane) ~active_pane:pane.id ~buffer ~viewport in
   render_tab (List.nth_exn editor.tabs 0) editor !(pane.cursor);
   render_whole_viewport !(editor.viewport);
+  render_cursor_in_view ~cursor:!(pane.cursor);
+  Out_channel.flush stdout;
   event_loop editor
 ;;
