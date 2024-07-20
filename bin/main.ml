@@ -218,10 +218,10 @@ let () =
       (Unsigned.UInt32.of_int (String.length source_code))
   in
   if to_voidp tree = null
-  then Printf.printf "Failed to parse source code\n"
+  then Fmt.pr "Failed to parse source code\n"
   else (
     let root_node = ts_tree_root_node tree in
     print_node root_node;
-    Printf.printf "Successfully parsed source code\n";
+    Fmt.pr "Successfully parsed source code\n";
     ts_parser_delete parser)
 ;;
