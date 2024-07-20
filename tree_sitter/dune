@@ -14,20 +14,21 @@
   (action 
     (run %{deps})))
 
-
-
 (library
   (name tree_sitter_generated)
   (modules tree_sitter_generated)
   (c_library_flags
-    -L%{env:LANGUAGES_DIR=/usr/local/lib}/javascript
+    -L%{env:LANGUAGES_DIR=/usr/lib}/javascript
     -ltree-sitter-javascript
-    -L%{env:TSLIB=/usr/local/lib} 
+    -L%{env:LANGUAGES_DIR=/usr/lib}/ocaml
+    -ltree-sitter-ocaml
+    -L%{env:TSLIB=/usr/lib} 
     -ltree-sitter)
   (foreign_stubs
     (language c)
     (names tree_sitter_stubs)
     (flags 
-      -I%{env:TSINC=/usr/local/include}
-      -I%{workspace_root}/languages/javascript))
+      -I%{env:TSINC=/usr/include}
+      -I%{workspace_root}/languages/javascript
+      -I%{workspace_root}/languages/ocaml))
   (libraries ctypes.stubs))
