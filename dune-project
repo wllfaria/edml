@@ -25,6 +25,7 @@
 
 (package
  (name ansi)
+ (allow_empty)
  (synopsis "silly terminal text editor")
  (description "in ocaml!")
  (depends ocaml dune)
@@ -33,6 +34,7 @@
 
 (package
   (name keymap)
+  (allow_empty)
   (synopsis "silly terminal text editor")
   (description "its definitely something")
   (depends ocaml dune)
@@ -41,6 +43,7 @@
 
 (package
   (name tree_sitter)
+  (allow_empty)
   (synopsis "silly terminal text editor")
   (description "its definitely something")
   (depends ocaml dune)

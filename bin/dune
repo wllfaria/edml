@@ -2,5 +2,5 @@
  (package edml)
  (public_name edml)
  (name main)
- (libraries edml keymaps tree_sitter tree_sitter_generated)
+ (libraries edml keymaps tree_sitter tree_sitter_generated ctypes)
  (preprocess (pps ppx_deriving.eq)))

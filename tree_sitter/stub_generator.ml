@@ -1,4 +1,7 @@
-let c_headers = "#include <tree_sitter/api.h>"
+let c_headers =
+  {|#include <tree_sitter/api.h>
+#include "../../../languages/javascript/tree-sitter-javascript.h"|}
+;;
 
 let main () =
   let ml_out = open_out "tree_sitter_generated.ml" in
@@ -9,7 +12,6 @@ let main () =
   let prefix = "ts" in
   Cstubs.write_c c_fmt ~prefix (module Tree_sitter.Bindings);
   Cstubs.write_ml ml_fmt ~prefix (module Tree_sitter.Bindings);
-  (* Cstubs.Types.write_c c_fmt (module Tree_sitter.Enums); *)
   Format.pp_print_flush ml_fmt ();
   Format.pp_print_flush c_fmt ();
   close_out ml_out;
