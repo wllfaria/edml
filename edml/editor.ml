@@ -1,11 +1,12 @@
+let parsers : Tree_sitter.ts_parser list ref = ref []
+
 type editor =
   { tabs : tab list
   ; viewport : Viewport.t ref
   ; mode : mode
-  ; buffers : Text_buffer.t list
+  ; buffers : Text_buffer.text_buffer list
   ; active_tab : int
   }
-[@@deriving eq, show { with_path = false }]
 
 and mode =
   | Normal

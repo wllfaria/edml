@@ -4,6 +4,7 @@ open Types
 open Bindings
 module TS = Bindings (Tree_sitter_generated)
 
+type t = parser
 type ts_language = Types.ts_language
 type ts_parser = Types.ts_parser
 type ts_tree = Types.ts_tree

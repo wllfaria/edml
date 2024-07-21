@@ -6,7 +6,16 @@
 (library
   (name tree_sitter)
   (modules tree_sitter utils types)
-  (libraries ctypes ctypes.stubs ctypes.foreign bindings tree_sitter_generated assertions))
+  (libraries
+    ctypes
+    ctypes.stubs
+    ctypes.foreign
+    bindings
+    tree_sitter_generated
+    assertions)
+  (preprocess (pps
+    ppx_deriving.show
+    ppx_deriving.eq)))
 
 (executable
   (name stub_generator)
