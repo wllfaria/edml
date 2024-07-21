@@ -16,7 +16,7 @@ let%test "move left with available space" =
   let cursor = { row = 0; col = 10; real_col = 9; offset_row = 0; offset_col = 0 } in
   let expect = { row = 0; col = 9; real_col = 9; offset_row = 0; offset_col = 0 } in
   let result = move_left cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move left without available space" =
@@ -25,7 +25,7 @@ let%test "move left without available space" =
   let cursor = { row = 1; col = 0; real_col = 0; offset_row = 0; offset_col = 0 } in
   let expect = { row = 1; col = 0; real_col = 0; offset_row = 0; offset_col = 0 } in
   let result = move_left cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move down to line with same or bigger size" =
@@ -34,7 +34,7 @@ let%test "move down to line with same or bigger size" =
   let text_object = make_text_object () in
   let expect = { row = 1; col = 0; real_col = 0; offset_row = 0; offset_col = 0 } in
   let result = move_down cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move down to line with smaller size" =
@@ -43,7 +43,7 @@ let%test "move down to line with smaller size" =
   let text_object = make_text_object () in
   let expect = { row = 1; col = 0; real_col = 10; offset_row = 0; offset_col = 0 } in
   let result = move_down cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move down to line with smaller size, then to line with bigger size" =
@@ -52,13 +52,13 @@ let%test "move down to line with smaller size, then to line with bigger size" =
   let text_object = make_text_object () in
   let expect = { row = 1; col = 0; real_col = 10; offset_row = 0; offset_col = 0 } in
   let result = move_down cursor text_object dimensions in
-  match [%eq: t] expect result with
+  match [%eq: cursor] expect result with
   | false -> false
   | true ->
     let cursor = expect in
     let expect = { row = 2; col = 10; real_col = 10; offset_row = 0; offset_col = 0 } in
     let result = move_down cursor text_object dimensions in
-    [%eq: t] expect result
+    [%eq: cursor] expect result
 ;;
 
 let%test "move down to line with smaller size, then to line with enough size" =
@@ -67,13 +67,13 @@ let%test "move down to line with smaller size, then to line with enough size" =
   let text_object = make_text_object () in
   let expect = { row = 1; col = 0; real_col = 17; offset_row = 0; offset_col = 0 } in
   let result = move_down cursor text_object dimensions in
-  match [%eq: t] expect result with
+  match [%eq: cursor] expect result with
   | false -> false
   | true ->
     let cursor = expect in
     let expect = { row = 2; col = 16; real_col = 17; offset_row = 0; offset_col = 0 } in
     let result = move_down cursor text_object dimensions in
-    [%eq: t] expect result
+    [%eq: cursor] expect result
 ;;
 
 let%test "move down without lines below" =
@@ -82,7 +82,7 @@ let%test "move down without lines below" =
   let text_object = make_text_object () in
   let expect = { row = 4; col = 0; real_col = 0; offset_row = 0; offset_col = 0 } in
   let result = move_down cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move up with lines above" =
@@ -91,7 +91,7 @@ let%test "move up with lines above" =
   let text_object = make_text_object () in
   let expect = { row = 0; col = 0; real_col = 0; offset_row = 0; offset_col = 0 } in
   let result = move_up cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move up without lines above" =
@@ -100,7 +100,7 @@ let%test "move up without lines above" =
   let text_object = make_text_object () in
   let expect = { row = 0; col = 0; real_col = 0; offset_row = 0; offset_col = 0 } in
   let result = move_up cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move up to smaller line above" =
@@ -109,7 +109,7 @@ let%test "move up to smaller line above" =
   let text_object = make_text_object () in
   let expect = { row = 1; col = 0; real_col = 10; offset_row = 0; offset_col = 0 } in
   let result = move_up cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move up to bigger line above" =
@@ -118,7 +118,7 @@ let%test "move up to bigger line above" =
   let text_object = make_text_object () in
   let expect = { row = 0; col = 0; real_col = 0; offset_row = 0; offset_col = 0 } in
   let result = move_up cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move right with available space" =
@@ -127,7 +127,7 @@ let%test "move right with available space" =
   let text_object = make_text_object () in
   let expect = { row = 0; col = 1; real_col = 1; offset_row = 0; offset_col = 0 } in
   let result = move_right cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "move right at the end of the line" =
@@ -136,7 +136,7 @@ let%test "move right at the end of the line" =
   let text_object = make_text_object () in
   let expect = { row = 0; col = 18; real_col = 18; offset_row = 0; offset_col = 0 } in
   let result = move_right cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;
 
 let%test "scrolling down works as expected" =
@@ -146,5 +146,5 @@ let%test "scrolling down works as expected" =
   let text_object = Text_object.make content in
   let expect = { row = 70; col = 0; real_col = 0; offset_row = 31; offset_col = 0 } in
   let result = move_to_bottom cursor text_object dimensions in
-  [%eq: t] expect result
+  [%eq: cursor] expect result
 ;;

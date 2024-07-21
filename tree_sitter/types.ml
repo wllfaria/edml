@@ -25,3 +25,13 @@ type 'a input =
   ; encoding : input_encoding
   }
 [@@deriving show { with_path = false }]
+
+type ts_query_error =
+  | TSQueryErrorNone
+  | TSQueryErrorSyntax
+  | TSQueryErrorNodeType
+  | TSQueryErrorField
+  | TSQueryErrorCapture
+  | TSQueryErrorStructure
+  | TSQueryErrorLanguage
+[@@deriving eq, show { with_path = false }]

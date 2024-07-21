@@ -1,6 +1,6 @@
 open Core
 
-type t =
+type cursor =
   { row : int
   ; col : int
   ; real_col : int

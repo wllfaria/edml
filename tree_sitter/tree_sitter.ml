@@ -4,7 +4,6 @@ open Types
 open Bindings
 module TS = Bindings (Tree_sitter_generated)
 
-type t = parser
 type ts_language = Types.ts_language
 type ts_parser = Types.ts_parser
 type ts_tree = Types.ts_tree
@@ -152,7 +151,30 @@ let ts_tree_cursor_goto_first_child_for_point =
 ;;
 
 let ts_tree_cursor_copy = TS.ts_tree_cursor_copy
-let ts_query_new = TS.ts_query_new
+
+let ts_query_new language code =
+  let open Ctypes in
+  let len = uint32_of_int @@ String.length code in
+  let err_offset = allocate_n uint32_t ~count:1 in
+  let err_type = allocate_n uint32_t ~count:1 in
+  let result = TS.ts_query_new language code len err_offset err_type in
+  if Ctypes.(to_voidp result) = Ctypes.null
+  then (
+    let err_type =
+      match uint32_to_int !@err_type with
+      | 0 -> TSQueryErrorNone
+      | 1 -> TSQueryErrorSyntax
+      | 2 -> TSQueryErrorNodeType
+      | 3 -> TSQueryErrorField
+      | 4 -> TSQueryErrorCapture
+      | 5 -> TSQueryErrorStructure
+      | 6 -> TSQueryErrorLanguage
+      | _ -> unreachable ()
+    in
+    Error (uint32_to_int !@err_offset, err_type))
+  else Ok result
+;;
+
 let ts_query_delete = TS.ts_query_delete
 let ts_query_pattern_count = TS.ts_query_pattern_count
 let ts_query_capture_count = TS.ts_query_capture_count

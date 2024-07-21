@@ -4,6 +4,7 @@ type filetype =
   | Ocaml
   | OcamlInterface
   | PlainText
+  | Javascript
 [@@deriving eq, show { with_path = false }]
 
 let extension_of_filename filename =
@@ -18,6 +19,8 @@ let filetype_of_filename filename =
     (match extension with
      | "ml" -> Ocaml
      | "mli" -> OcamlInterface
+     | "js" -> Javascript
+     | "cjs" -> Javascript
      | _ -> PlainText)
   | None -> PlainText
 ;;

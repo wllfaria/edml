@@ -3,7 +3,7 @@ open Ctypes
 module Types = struct
   (* Opaque *)
   type ts_language = unit ptr
-  type ts_parser = unit ptr
+  type ts_parser = unit ptr [@@deriving eq, show]
   type ts_tree = unit ptr
   type ts_query = unit ptr
   type ts_query_cursor = unit ptr

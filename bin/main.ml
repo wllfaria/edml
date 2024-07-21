@@ -25,7 +25,7 @@ let render_viewport_diffs prev curr =
   List.iter ~f:render_change @@ difs
 ;;
 
-let render_pane ~(pane : Pane.t) ~position ~(editor : Editor.t) ~cursor =
+let render_pane ~(pane : Pane.pane) ~position ~(editor : Editor.editor) ~cursor =
   let buffer = List.nth_exn editor.buffers pane.buffer_id in
   Viewport.fill !(buffer.text_object) cursor editor.viewport position
 ;;
@@ -44,7 +44,7 @@ let rec render_split
   ~width
   ~height
   ~(split : Editor.pane_branch)
-  ~(editor : Editor.t)
+  ~(editor : Editor.editor)
   ~cursor
   =
   let make_position ~dimensions ~selector ~create =
@@ -82,7 +82,7 @@ let rec render_split
     | Single pane -> render_pane ~pane ~position ~editor ~cursor)
 ;;
 
-let render_tab (tab : Editor.tab) (editor : Editor.t) cursor =
+let render_tab (tab : Editor.tab) (editor : Editor.editor) cursor =
   let vp = editor.viewport in
   match tab.panes with
   | Split split ->
@@ -99,7 +99,7 @@ let rec find_pane (node : Editor.pane_tree) needle =
   | _ -> None
 ;;
 
-let handle_action ~(editor : Editor.t) ~(pane : Pane.t) =
+let handle_action ~(editor : Editor.editor) ~(pane : Pane.pane) =
   let dimensions : Ansi.Terminal.dimensions =
     { rows = !(editor.viewport).rows; cols = !(editor.viewport).cols }
   in
@@ -140,7 +140,7 @@ let render_cursor_in_view ~cursor =
   Ansi.Cursor.move_to ~col ~row
 ;;
 
-let rec event_loop (editor : Editor.t) =
+let rec event_loop (editor : Editor.editor) =
   Ansi.Cursor.hide ();
   let previous_viewport = Viewport.copy !(editor.viewport) in
   let tab = List.nth_exn editor.tabs editor.active_tab in
@@ -164,23 +164,8 @@ let () =
   let args = Sys.get_argv () in
   let argc = Array.length args in
   let path = if argc >= 2 then Array.get args 1 else "" in
-  let file_content =
-    match Fs.maybe_read_file path with
-    | Some content -> content
-    | None -> ""
-  in
-  let text_object = ref @@ Text_object.make file_content in
-  let buffer_id = Utils.next_id ~id_ref:Utils.buffer_id in
-  let buffer = Text_buffer.make text_object buffer_id path in
-  let pane_id = Utils.next_id ~id_ref:Utils.pane_id in
-  let pane = Pane.make ~buffer_id:buffer.id ~id:pane_id in
-  let dimensions = Ansi.Terminal.size () in
-  let viewport = ref @@ Viewport.make ~cols:dimensions.cols ~rows:dimensions.rows in
-  let editor = Editor.make ~pane:(Single pane) ~active_pane:pane.id ~buffer ~viewport in
-  let parser = Tree_sitter.ts_parser_new () in
-  let language = Tree_sitter.tree_sitter_ocaml () in
-  let _ = Tree_sitter.ts_parser_set_language parser language in
-  Editor.parsers := [ parser ];
+  let editor = Editor.init path in
+  let pane = Editor.get_focused_pane editor in
   render_tab (List.nth_exn editor.tabs 0) editor !(pane.cursor);
   render_whole_viewport !(editor.viewport);
   render_cursor_in_view ~cursor:!(pane.cursor);

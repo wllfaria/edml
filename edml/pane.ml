@@ -1,5 +1,5 @@
-type t =
-  { cursor : Cursor.t ref
+type pane =
+  { cursor : Cursor.cursor ref
   ; id : int
   ; buffer_id : int
   }
