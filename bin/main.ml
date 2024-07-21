@@ -184,44 +184,37 @@
 (*   event_loop editor *)
 (* ;; *)
 
-module TS = Tree_sitter.Bindings (Tree_sitter_generated)
-open TS
+(* open Tree_sitter *)
 
-let rec print_node node =
-  let node_type = ts_node_type node in
-  let start_byte = ts_node_start_byte node in
-  let end_byte = ts_node_end_byte node in
-  Printf.printf
-    "Node type: %s, start: %d, end: %d\n"
-    node_type
-    (Unsigned.UInt32.to_int start_byte)
-    (Unsigned.UInt32.to_int end_byte);
-  let child_count = ts_node_child_count node in
-  for i = 0 to Unsigned.UInt32.to_int child_count - 1 do
-    let child = ts_node_child node (Unsigned.UInt32.of_int i) in
-    print_node child
-  done
-;;
-
-let () =
-  let open Ctypes in
-  let parser = ts_parser_new () in
-  let language = tree_sitter_javascript () in
-  let success = ts_parser_set_language parser language in
-  if not success then failwith "Failed to set language";
-  let source_code = "let x = 1;" in
-  let tree =
-    ts_parser_parse_string
-      parser
-      (from_voidp void null)
-      source_code
-      (Unsigned.UInt32.of_int (String.length source_code))
-  in
-  if to_voidp tree = null
-  then Fmt.pr "Failed to parse source code\n"
-  else (
-    let root_node = ts_tree_root_node tree in
-    print_node root_node;
-    Fmt.pr "Successfully parsed source code\n";
-    ts_parser_delete parser)
-;;
+(* let rec print_node node = *)
+(*   let node_type = ts_node_type node in *)
+(*   let start_byte = ts_node_start_byte node in *)
+(*   let end_byte = ts_node_end_byte node in *)
+(*   Printf.printf *)
+(*     "Node type: %s, start: %d, end: %d\n" *)
+(*     node_type *)
+(*     (Unsigned.UInt32.to_int start_byte) *)
+(*     (Unsigned.UInt32.to_int end_byte); *)
+(*   let child_count = ts_node_child_count node in *)
+(*   for i = 0 to Unsigned.UInt32.to_int child_count - 1 do *)
+(*     let child = ts_node_child node (Unsigned.UInt32.of_int i) in *)
+(*     print_node child *)
+(*   done *)
+(* ;; *)
+(**)
+(* let () = *)
+(*   let open Ctypes in *)
+(*   let parser = ts_parser_new () in *)
+(*   let language = tree_sitter_javascript () in *)
+(*   let success = ts_parser_set_language parser language in *)
+(*   if not success then failwith "Failed to set language"; *)
+(*   let source_code = "let x = 1;" in *)
+(*   let tree = ts_parser_parse_string parser (from_voidp void null) source_code in *)
+(*   if to_voidp tree = null *)
+(*   then Fmt.pr "Failed to parse source code\n" *)
+(*   else ( *)
+(*     let root_node = ts_tree_root_node tree in *)
+(*     print_node root_node; *)
+(*     Fmt.pr "Successfully parsed source code\n"; *)
+(*     ts_parser_delete parser) *)
+(* ;; *)

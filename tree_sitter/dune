@@ -1,12 +1,17 @@
 (library
-  (name tree_sitter)
-  (modules tree_sitter)
+  (name bindings)
+  (modules bindings)
   (libraries ctypes ctypes.stubs))
+
+(library
+  (name tree_sitter)
+  (modules tree_sitter utils types)
+  (libraries ctypes ctypes.stubs ctypes.foreign bindings tree_sitter_generated assertions))
 
 (executable
   (name stub_generator)
   (modules stub_generator)
-  (libraries ctypes ctypes.stubs tree_sitter))
+  (libraries ctypes ctypes.stubs bindings))
 
 (rule
   (targets tree_sitter_stubs.c tree_sitter_generated.ml)

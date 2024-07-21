@@ -37,8 +37,8 @@ let main () =
   let c_fmt = Format.formatter_of_out_channel c_out in
   Format.fprintf c_fmt "%s\n" headers;
   let prefix = "ts" in
-  Cstubs.write_c c_fmt ~prefix (module Tree_sitter.Bindings);
-  Cstubs.write_ml ml_fmt ~prefix (module Tree_sitter.Bindings);
+  Cstubs.write_c c_fmt ~prefix (module Bindings.Bindings);
+  Cstubs.write_ml ml_fmt ~prefix (module Bindings.Bindings);
   Format.pp_print_flush ml_fmt ();
   Format.pp_print_flush c_fmt ();
   close_out ml_out;

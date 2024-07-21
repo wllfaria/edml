@@ -1,5 +1,5 @@
 open Core
-open Assert
+open Assertions
 open Types
 
 type action =
