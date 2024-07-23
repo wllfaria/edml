@@ -1,4 +1,7 @@
 open Core
+open Edml
+open Text_object
+open Cursor
 
 type position =
   { row : int
@@ -90,8 +93,6 @@ let diff ~prev ~curr =
 ;;
 
 let fill text_object cursor viewport (position : position) =
-  let open Text_object in
-  let open Cursor in
   let len = min !viewport.rows (text_object.lines - cursor.offset_row) in
   let content_onscreen = List.sub text_object.content ~pos:cursor.offset_row ~len in
   for row = 0 to len - 1 do

@@ -1,11 +1,7 @@
 open Core
 open Assertions
-open Syntax
-
-type mode =
-  | Normal
-  | Insert
-[@@deriving eq, show { with_path = false }]
+open Languages
+open Types
 
 type direction =
   | Horizontal
@@ -32,7 +28,6 @@ type tab =
 
 type editor =
   { tabs : tab list
-  ; viewport : Viewport.t ref
   ; mode : mode
   ; buffers : Text_buffer.text_buffer list
   ; active_tab : int
@@ -73,18 +68,10 @@ let init path =
   let text_object = make_initial_text_object path in
   let buffer = make_buffer text_object path in
   let pane = make_pane buffer.id in
-  let dimensions = Ansi.Terminal.size () in
-  let viewport = ref @@ Viewport.make ~cols:dimensions.cols ~rows:dimensions.rows in
   let parsers = Hashtbl.create (module Language_id) in
   maybe_add_parser parsers buffer;
   let tab = { panes = Single pane; active_pane = pane.id } in
-  { buffers = [ buffer ]
-  ; tabs = [ tab ]
-  ; active_tab = 0
-  ; viewport
-  ; mode = Normal
-  ; parsers
-  }
+  { buffers = [ buffer ]; tabs = [ tab ]; active_tab = 0; mode = Normal; parsers }
 ;;
 
 let rec find_pane tree id =

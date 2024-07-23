@@ -1,4 +1,5 @@
 open Core
+open Edml_term
 open Edml
 open Cursor
 open Viewport

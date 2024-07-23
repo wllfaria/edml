@@ -1,15 +1,11 @@
 open Core
 open Assertions
 open Filetype
-
-type language_id =
-  | Ocaml
-  | Javascript
-[@@deriving sexp, compare, hash]
+open Types
 
 module Language_id = struct
   module T = struct
-    type t = language_id [@@deriving sexp, compare, hash]
+    type t = language_id [@@deriving sexp, compare, hash, eq, show { with_path = false }]
   end
 
   include T
@@ -36,4 +32,12 @@ let parser_from_filetype (filetype : filetype) =
     if not ok then panic "failed to set parser language";
     Some (parser, Javascript)
   | PlainText -> None
+;;
+
+let language_id_of_filetype (filetype : filetype) =
+  match filetype with
+  | Ocaml -> Ocaml
+  | OcamlInterface -> Ocaml
+  | Javascript -> Javascript
+  | PlainText -> PlainText
 ;;

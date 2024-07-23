@@ -1,0 +1,8 @@
+(library
+  (name edml_term_tests)
+  (inline_tests)
+  (libraries edml_term fmt core edml)
+  (preprocess (pps
+    ppx_deriving.eq
+    ppx_deriving.show
+    ppx_inline_test)))

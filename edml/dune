@@ -1,7 +1,7 @@
 (library
   (name edml)
   (inline_tests)
-  (libraries core ansi assertions tree_sitter)
+  (libraries core ansi assertions tree_sitter trie)
   (preprocess (pps
     ppx_inline_test
     ppx_sexp_conv

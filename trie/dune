@@ -1,7 +1,7 @@
 (library
-  (name keymaps)
+  (name trie)
   (inline_tests)
-  (libraries fmt core edml)
+  (libraries core fmt)
   (preprocess (pps
     ppx_inline_test
     ppx_deriving.eq

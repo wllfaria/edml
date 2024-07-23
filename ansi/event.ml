@@ -1,6 +1,6 @@
 open Core
 
-let tty_buffer_size = 10
+let tty_buffer_size = 1024
 
 type event =
   | FocusGained

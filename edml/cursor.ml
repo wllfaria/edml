@@ -80,7 +80,7 @@ let move_up cursor text_object vp_dimensions =
   else cursor
 ;;
 
-let move_down cursor text_object vp_dimensions =
+let move_down cursor text_object dimensions =
   let open Text_object in
   let cursor =
     if cursor.row < List.length text_object.content - 1
@@ -88,8 +88,8 @@ let move_down cursor text_object vp_dimensions =
     else cursor
   in
   let line = List.nth_exn text_object.content cursor.row in
-  let cursor = adjust_row cursor vp_dimensions in
-  adjust_column cursor line vp_dimensions
+  let cursor = adjust_row cursor dimensions in
+  adjust_column cursor line dimensions
 ;;
 
 let move_to_top cursor text_object vp_dimensions =

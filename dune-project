@@ -33,15 +33,6 @@
   (topics terminal editor "text editor")))
 
 (package
-  (name keymap)
-  (allow_empty)
-  (synopsis "silly terminal text editor")
-  (description "its definitely something")
-  (depends ocaml dune)
-  (tags
-    (topics terminal editor "text editor")))
-
-(package
   (name tree_sitter)
   (allow_empty)
   (synopsis "silly terminal text editor")
@@ -52,6 +43,24 @@
 
 (package
   (name assertions)
+  (allow_empty)
+  (synopsis "silly terminal text editor")
+  (description "its definitely something")
+  (depends ocaml dune)
+  (tags
+    (topics terminal editor "text editor")))
+
+(package
+  (name edml_term)
+  (allow_empty)
+  (synopsis "silly terminal text editor")
+  (description "its definitely something")
+  (depends ocaml dune)
+  (tags
+    (topics terminal editor "text editor")))
+
+(package
+  (name trie)
   (allow_empty)
   (synopsis "silly terminal text editor")
   (description "its definitely something")
