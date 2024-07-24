@@ -1,7 +1,6 @@
 open Core
 open Assertions
 open Filetype
-open Languages
 open Types
 
 type text_buffer =
@@ -9,8 +8,9 @@ type text_buffer =
   ; id : int
   ; filetype : filetype
   ; language_id : language_id
+  ; syntax_tree : Tree_sitter.ts_tree option [@opaque]
   }
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 let get_filename path =
   let parts = String.split ~on:'/' path in
@@ -18,9 +18,8 @@ let get_filename path =
   List.last_exn parts
 ;;
 
-let make text_object id filepath =
+let make text_object id filepath syntax_tree language_id =
   let filename = get_filename filepath in
   let filetype = filetype_of_filename filename in
-  let language_id = language_id_of_filetype filetype in
-  { text_object; id; filetype; language_id }
+  { text_object; id; filetype; language_id; syntax_tree }
 ;;

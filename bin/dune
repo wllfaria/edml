@@ -1,6 +1,0 @@
-(executable
- (package edml)
- (public_name edml)
- (name main)
- (libraries edml tree_sitter)
- (preprocess (pps ppx_deriving.eq)))

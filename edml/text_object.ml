@@ -18,6 +18,7 @@ type t =
 
 let make source =
   let content = String.split_lines source in
+  let content = if List.is_empty content then [ "" ] else content in
   let lines = List.length content in
   { content; lines }
 ;;
@@ -103,4 +104,8 @@ let handle_action ~text_object ~action ~anchor =
   | DeleteCurrChar -> delete_curr_char ~anchor ~text_object
   | DeletePrevChar -> delete_prev_char ~anchor ~text_object
   | DeleteUntilEOL -> delete_until_eol ~anchor ~text_object
+;;
+
+let to_string text_object =
+  List.fold text_object.content ~init:"" ~f:(fun acc l -> acc ^ l ^ "\n")
 ;;

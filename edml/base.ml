@@ -48,13 +48,13 @@ let make_pane buffer_id =
   Pane.make ~buffer_id ~id:pane_id
 ;;
 
-let make_buffer text_object path =
+let make_buffer text_object path language_id tree =
   let buffer_id = Utils.next_id ~id_ref:Utils.buffer_id in
-  Text_buffer.make text_object buffer_id path
+  Text_buffer.make text_object buffer_id path tree language_id
 ;;
 
-let maybe_add_parser parsers (buffer : Text_buffer.text_buffer) =
-  match parser_from_filetype buffer.filetype with
+let maybe_add_parser parsers filetype =
+  match parser_from_filetype filetype with
   | Some (parser, lang) ->
     (match Hashtbl.find parsers lang with
      | Some _ -> ()
@@ -66,10 +66,15 @@ let maybe_add_parser parsers (buffer : Text_buffer.text_buffer) =
 
 let init path =
   let text_object = make_initial_text_object path in
-  let buffer = make_buffer text_object path in
-  let pane = make_pane buffer.id in
+  let filetype = Filetype.filetype_of_filename path in
+  let language_id = language_id_of_filetype filetype in
   let parsers = Hashtbl.create (module Language_id) in
-  maybe_add_parser parsers buffer;
+  maybe_add_parser parsers filetype;
+  let parser = Hashtbl.find_exn parsers language_id in
+  let source = Text_object.to_string !text_object in
+  let tree = Tree_sitter.ts_parser_parse_string parser None source in
+  let buffer = make_buffer text_object path language_id tree in
+  let pane = make_pane buffer.id in
   let tab = { panes = Single pane; active_pane = pane.id } in
   { buffers = [ buffer ]; tabs = [ tab ]; active_tab = 0; mode = Normal; parsers }
 ;;

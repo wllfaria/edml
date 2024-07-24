@@ -50,9 +50,14 @@ let ts_parser_parse parser tree input =
   TS.ts_parser_parse parser tree ts_input
 ;;
 
-let ts_parser_parse_string parser tree code =
+let ts_parser_parse_string parser (tree : Types.ts_tree option) code =
+  let tree =
+    match tree with
+    | None -> Ctypes.null
+    | Some t -> t
+  in
   let len = uint32_of_int @@ String.length code in
-  TS.ts_parser_parse_string parser tree code len
+  Some (TS.ts_parser_parse_string parser tree code len)
 ;;
 
 let ts_parser_parse_string_encoding parser tree code encoding =

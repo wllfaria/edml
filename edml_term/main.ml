@@ -2,71 +2,9 @@ open Core
 open Edml
 open Assertions
 open Types
+open Edml_term_lib
 open Viewport
 open Base
-
-let key_code_of_ansi keycode =
-  let open Ansi.Event in
-  match keycode with
-  | Char c ->
-    let open Event_handler in
-    Char c
-  | Enter ->
-    let open Event_handler in
-    Enter
-  | Backspace ->
-    let open Event_handler in
-    Backspace
-  | Left ->
-    let open Event_handler in
-    Left
-  | Right ->
-    let open Event_handler in
-    Right
-  | Up ->
-    let open Event_handler in
-    Up
-  | Down ->
-    let open Event_handler in
-    Down
-  | Esc ->
-    let open Event_handler in
-    Esc
-  | Home ->
-    let open Event_handler in
-    Home
-  | End ->
-    let open Event_handler in
-    End
-  | BackTab ->
-    let open Event_handler in
-    BackTab
-  | F n ->
-    let open Event_handler in
-    F n
-;;
-
-let modifier_of_ansi ansi_modifier =
-  let open Ansi.Event in
-  match ansi_modifier with
-  | Normal ->
-    let open Event_handler in
-    Normal
-  | Control ->
-    let open Event_handler in
-    Control
-  | Shift ->
-    let open Event_handler in
-    Shift
-;;
-
-let key_event_of_ansi ansi_key_event =
-  let open Ansi.Event in
-  let code = ansi_key_event.code in
-  let modifier = ansi_key_event.modifier in
-  let open Event_handler in
-  { code = key_code_of_ansi code; modifier = modifier_of_ansi modifier }
-;;
 
 let setup_terminal _ =
   Ansi.Terminal.enable_raw_mode ();
@@ -152,10 +90,10 @@ let render_tab viewport (tab : Base.tab) (editor : Base.editor) cursor =
   let vp = viewport in
   match tab.panes with
   | Split split ->
-    render_split ~col:0 ~row:0 ~width:!vp.cols ~height:!vp.rows ~split ~editor ~cursor
+    render_split vp ~col:0 ~row:0 ~width:!vp.cols ~height:!vp.rows ~split ~editor ~cursor
   | Single pane ->
     let position = { col = 0; row = 0; width = !vp.cols; height = !vp.rows } in
-    render_pane ~pane ~position ~editor ~cursor viewport
+    render_pane vp ~pane ~position ~editor ~cursor
 ;;
 
 let rec find_pane (node : Base.pane_tree) needle =
@@ -165,32 +103,10 @@ let rec find_pane (node : Base.pane_tree) needle =
   | _ -> None
 ;;
 
-let key_modifier_of_ansi ansi_modifier =
-  let open Ansi.Event in
-  match ansi_modifier with
-  | Normal ->
-    let open Event_handler in
-    Normal
-  | Shift ->
-    let open Event_handler in
-    Shift
-  | Control ->
-    let open Event_handler in
-    Control
-;;
-
-let key_event_of_ansi ansi_event =
-  match ansi_event with
-  | Ansi.Event.KeyEvent { code = Char c; modifier = m } ->
-    { code = Char c; modifier = key_modifier_of_ansi m }
-  | _ -> todo ()
-;;
-
 let handle_action ~(editor : Base.editor) ~(pane : Pane.pane) =
   let maybe_actions =
-    match Ansi.Event.read () with
-    | KeyEvent key_event ->
-      Event_handler.handle_key_event (key_event_of_ansi key_event) editor.mode
+    match Ansi_to_editor.event_of_ansi @@ Ansi.Event.read () with
+    | KeyEvent key_event -> Event_handler.handle_key_event key_event editor.mode
     | _ -> todo ()
   in
   let editor =
@@ -202,7 +118,11 @@ let handle_action ~(editor : Base.editor) ~(pane : Pane.pane) =
           let buffer = List.nth_exn acc.buffers pane.buffer_id in
           let text_object = !(buffer.text_object) in
           pane.cursor
-          := Cursor.handle_action cursor_action !(pane.cursor) text_object dimensions;
+          := Cursor.handle_action
+               cursor_action
+               !(pane.cursor)
+               text_object
+               (Ansi.Terminal.size ());
           acc
         | ChangeMode mode -> { acc with mode }
         | TextObjectAction action ->
@@ -211,7 +131,8 @@ let handle_action ~(editor : Base.editor) ~(pane : Pane.pane) =
           let anchor = { col = cursor.col; row = cursor.row } in
           let text_object = !(buffer.text_object) in
           buffer.text_object := Text_object.handle_action ~action ~text_object ~anchor;
-          pane.cursor := Cursor.move_right !(pane.cursor) text_object dimensions;
+          pane.cursor
+          := Cursor.move_right !(pane.cursor) text_object (Ansi.Terminal.size ());
           acc)
     | None -> editor
   in
