@@ -35,3 +35,23 @@ type ts_query_error =
   | TSQueryErrorStructure
   | TSQueryErrorLanguage
 [@@deriving eq, show { with_path = false }]
+
+type node =
+  { inner : Bindings.Types.ts_node Ctypes.structure [@opaque]
+  ; range : range
+  }
+[@@deriving show { with_path = false }]
+
+type query_capture =
+  { node : node
+  ; index : int
+  }
+[@@deriving show { with_path = false }]
+
+type query_match =
+  { id : int
+  ; pattern_index : int
+  ; capture_count : int
+  ; captures : query_capture list
+  }
+[@@deriving show { with_path = false }]

@@ -24,3 +24,11 @@ let filetype_of_filename filename =
      | _ -> PlainText)
   | None -> PlainText
 ;;
+
+let string_of_filetype filetype =
+  match filetype with
+  | Ocaml -> "ocaml"
+  | OcamlInterface -> "ocaml_interface"
+  | Javascript -> "javascript"
+  | PlainText -> "plain_text"
+;;

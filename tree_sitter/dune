@@ -5,9 +5,10 @@
 
 (library
   (name tree_sitter)
-  (modules tree_sitter utils types)
+  (modules tree_sitter utils tree_sitter_types)
   (libraries
     ctypes
+    core
     ctypes.stubs
     ctypes.foreign
     bindings

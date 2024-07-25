@@ -1,5 +1,7 @@
-open Types
 open Bindings
+module TS = Bindings (Tree_sitter_generated)
+open Tree_sitter_types
+open Core
 
 let size_t_of_int int = Unsigned.Size_t.of_int int
 let uint64_to_int uint = Unsigned.UInt64.to_int uint
@@ -7,6 +9,7 @@ let uint64_of_int int = Unsigned.UInt64.of_int int
 let uint32_to_int uint = Unsigned.UInt32.to_int uint
 let uint32_of_int int = Unsigned.UInt32.of_int int
 let uint16_of_int int = Unsigned.UInt16.of_int int
+let uint16_to_int int = Unsigned.UInt16.to_int int
 
 let ts_point_of_point point =
   let open Ctypes in
@@ -71,4 +74,32 @@ let ts_input_of_input input =
   setf i Types.ts_input_encoding @@ encoding;
   setf i Types.ts_input_read @@ read_fn;
   i
+;;
+
+let ts_node_to_node ts_node =
+  let start_byte = uint32_to_int @@ TS.ts_node_start_byte ts_node in
+  let end_byte = uint32_to_int @@ TS.ts_node_end_byte ts_node in
+  let start_point = ts_point_to_point @@ TS.ts_node_start_point ts_node in
+  let end_point = ts_point_to_point @@ TS.ts_node_end_point ts_node in
+  let range = { start_byte; end_byte; start_point; end_point } in
+  { inner = ts_node; range }
+;;
+
+let ts_query_capture_to_query_capture ts_capture =
+  let open Ctypes in
+  let node = getf ts_capture Types.ts_query_capture_node in
+  let node = ts_node_to_node node in
+  let index = uint32_to_int @@ getf ts_capture Types.ts_query_capture_index in
+  { node; index }
+;;
+
+let ts_query_match_to_query_match ts_match =
+  let open Ctypes in
+  let captures_ptr = getf ts_match Types.ts_query_match_capture_captures in
+  let capture_count = uint16_to_int @@ getf ts_match Types.ts_query_match_capture_count in
+  let pattern_index = uint16_to_int @@ getf ts_match Types.ts_query_match_pattern_index in
+  let id = uint32_to_int @@ getf ts_match Types.ts_query_match_id in
+  let captures = CArray.to_list @@ CArray.from_ptr captures_ptr capture_count in
+  let captures = List.map captures ~f:ts_query_capture_to_query_capture in
+  { id; pattern_index; capture_count; captures }
 ;;

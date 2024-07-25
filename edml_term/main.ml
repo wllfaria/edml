@@ -150,11 +150,7 @@ let rec event_loop viewport editor =
   Ansi.Cursor.hide ();
   let previous_viewport = Viewport.copy !viewport in
   let tab = List.nth_exn editor.tabs editor.active_tab in
-  let pane =
-    match find_pane tab.panes tab.active_pane with
-    | Some p -> p
-    | None -> unreachable ()
-  in
+  let pane = expect ~msg:"must have a pane" @@ find_pane tab.panes tab.active_pane in
   let editor = handle_action ~editor ~pane in
   let cursor = !(pane.cursor) in
   render_tab viewport tab editor cursor;

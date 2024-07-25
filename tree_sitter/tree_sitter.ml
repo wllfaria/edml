@@ -1,9 +1,10 @@
 open Utils
 open Assertions
-open Types
+open Tree_sitter_types
 open Bindings
 module TS = Bindings (Tree_sitter_generated)
 
+type query_match = Tree_sitter_types.query_match
 type ts_language = Types.ts_language
 type ts_parser = Types.ts_parser
 type ts_tree = Types.ts_tree
@@ -12,11 +13,16 @@ type ts_query_cursor = Types.ts_query_cursor
 type ts_lookahead_iterator = Types.ts_lookahead_iterator
 type ts_range = Types.ts_range
 
+let pp_query_match = pp_query_match
+
 let ts_parser_new () =
   let parser = TS.ts_parser_new () in
   Gc.finalise (fun p -> TS.ts_parser_delete p) parser;
   parser
 ;;
+
+(* we open core here because we want to use regular Gc above *)
+open Core
 
 let ts_parser_language = TS.ts_parser_language
 let ts_parser_set_language = TS.ts_parser_set_language
@@ -24,7 +30,7 @@ let ts_parser_set_language = TS.ts_parser_set_language
 let ts_parser_set_included_ranges parser ranges =
   let open Ctypes in
   let count = Unsigned.UInt32.of_int @@ List.length ranges in
-  let c_ranges = CArray.of_list Types.ts_range (List.map ts_range_of_range ranges) in
+  let c_ranges = CArray.of_list Types.ts_range (List.map ranges ~f:ts_range_of_range) in
   TS.ts_parser_set_included_ranges parser (CArray.start c_ranges) count
 ;;
 
@@ -35,7 +41,7 @@ let ts_parser_included_ranges parser =
   let counter = uint32_to_int !@counter in
   let ranges =
     CArray.to_list @@ CArray.from_ptr ts_ranges counter
-    |> List.map (fun r ->
+    |> List.map ~f:(fun r ->
       let start_byte = uint32_to_int @@ getf r Types.start_byte in
       let end_byte = uint32_to_int @@ getf r Types.end_byte in
       let start_point = ts_point_to_point @@ getf r Types.start_point in
@@ -57,7 +63,8 @@ let ts_parser_parse_string parser (tree : Types.ts_tree option) code =
     | Some t -> t
   in
   let len = uint32_of_int @@ String.length code in
-  Some (TS.ts_parser_parse_string parser tree code len)
+  let tree = TS.ts_parser_parse_string parser tree code len in
+  if phys_same Ctypes.(to_voidp tree) Ctypes.null then None else Some tree
 ;;
 
 let ts_parser_parse_string_encoding parser tree code encoding =
@@ -76,19 +83,75 @@ let ts_parser_set_timeout_micros parser timeout =
 
 let ts_parser_timeout_micros parser = uint64_to_int @@ TS.ts_parser_timeout_micros parser
 
+let ts_query_new language code =
+  let open Ctypes in
+  let len = uint32_of_int @@ String.length code in
+  let err_offset = allocate_n uint32_t ~count:1 in
+  let err_type = allocate_n uint32_t ~count:1 in
+  let result = TS.ts_query_new language code len err_offset err_type in
+  if phys_same Ctypes.(to_voidp result) Ctypes.null
+  then (
+    let err_type =
+      match uint32_to_int !@err_type with
+      | 0 -> TSQueryErrorNone
+      | 1 -> TSQueryErrorSyntax
+      | 2 -> TSQueryErrorNodeType
+      | 3 -> TSQueryErrorField
+      | 4 -> TSQueryErrorCapture
+      | 5 -> TSQueryErrorStructure
+      | 6 -> TSQueryErrorLanguage
+      | _ -> unreachable ()
+    in
+    Error (uint32_to_int !@err_offset, err_type))
+  else Ok result
+;;
+
+let ts_tree_copy = TS.ts_tree_copy
+
+let ts_tree_root_node tree =
+  let node = TS.ts_tree_root_node tree in
+  ts_node_to_node node
+;;
+
+let ts_tree_language = TS.ts_tree_language
+
+let ts_tree_root_node_with_offset tree offset extent =
+  let offset = uint32_of_int offset in
+  let extent = ts_point_of_point extent in
+  ts_node_to_node @@ TS.ts_tree_root_node_with_offset tree offset extent
+;;
+
+let ts_query_cursor_exec cursor query node =
+  let node = node.inner in
+  TS.ts_query_cursor_exec cursor query node
+;;
+
+let ts_query_cursor_matches cursor query node =
+  let open Ctypes in
+  ts_query_cursor_exec cursor query node;
+  let query_match = Ctypes.allocate_n Types.ts_query_match ~count:1 in
+  let rec poll_matches acc =
+    let result = TS.ts_query_cursor_next_match cursor query_match in
+    if result
+    then (
+      let query_match = ts_query_match_to_query_match !@query_match in
+      poll_matches (query_match :: acc))
+    else acc
+  in
+  let matches = poll_matches [] in
+  List.rev matches
+;;
+
 (* ======================================== *
  *            THIS PART IS A WIP            *
  * ======================================== *)
+
 let ts_parser_set_cancellation_flag = TS.ts_parser_set_cancellation_flag
 let ts_parser_cancellation_flag = TS.ts_parser_cancellation_flag
 let ts_parser_set_logger = TS.ts_parser_set_logger
 let ts_parser_logger = TS.ts_parser_logger
 let ts_parser_print_dot_graphs = TS.ts_parser_print_dot_graphs
-let ts_tree_copy = TS.ts_tree_copy
 let ts_tree_delete = TS.ts_tree_delete
-let ts_tree_root_node = TS.ts_tree_root_node
-let ts_tree_root_node_with_offset = TS.ts_tree_root_node_with_offset
-let ts_tree_language = TS.ts_tree_language
 let ts_tree_included_ranges = TS.ts_tree_included_ranges
 let ts_tree_edit = TS.ts_tree_edit
 let ts_tree_get_changed_ranges = TS.ts_tree_get_changed_ranges
@@ -156,30 +219,6 @@ let ts_tree_cursor_goto_first_child_for_point =
 ;;
 
 let ts_tree_cursor_copy = TS.ts_tree_cursor_copy
-
-let ts_query_new language code =
-  let open Ctypes in
-  let len = uint32_of_int @@ String.length code in
-  let err_offset = allocate_n uint32_t ~count:1 in
-  let err_type = allocate_n uint32_t ~count:1 in
-  let result = TS.ts_query_new language code len err_offset err_type in
-  if Ctypes.(to_voidp result) = Ctypes.null
-  then (
-    let err_type =
-      match uint32_to_int !@err_type with
-      | 0 -> TSQueryErrorNone
-      | 1 -> TSQueryErrorSyntax
-      | 2 -> TSQueryErrorNodeType
-      | 3 -> TSQueryErrorField
-      | 4 -> TSQueryErrorCapture
-      | 5 -> TSQueryErrorStructure
-      | 6 -> TSQueryErrorLanguage
-      | _ -> unreachable ()
-    in
-    Error (uint32_to_int !@err_offset, err_type))
-  else Ok result
-;;
-
 let ts_query_delete = TS.ts_query_delete
 let ts_query_pattern_count = TS.ts_query_pattern_count
 let ts_query_capture_count = TS.ts_query_capture_count
@@ -195,16 +234,14 @@ let ts_query_string_value_for_id = TS.ts_query_string_value_for_id
 let ts_query_disable_capture = TS.ts_query_disable_capture
 let ts_query_disable_pattern = TS.ts_query_disable_pattern
 let ts_query_cursor_new = TS.ts_query_cursor_new
+let ts_query_cursor_next_match = TS.ts_query_cursor_next_match
 let ts_query_cursor_delete = TS.ts_query_cursor_delete
-let ts_query_cursor_exec = TS.ts_query_cursor_exec
 let ts_query_cursor_did_exceed_match_limit = TS.ts_query_cursor_did_exceed_match_limit
 let ts_query_cursor_match_limit = TS.ts_query_cursor_match_limit
 let ts_query_cursor_set_match_limit = TS.ts_query_cursor_set_match_limit
 let ts_query_cursor_set_byte_range = TS.ts_query_cursor_set_byte_range
 let ts_query_cursor_set_point_range = TS.ts_query_cursor_set_point_range
-let ts_query_cursor_next_match = TS.ts_query_cursor_next_match
 let ts_query_cursor_remove_match = TS.ts_query_cursor_remove_match
-let ts_query_cursor_next_capture = TS.ts_query_cursor_next_capture
 let ts_query_cursor_set_max_start_depth = TS.ts_query_cursor_set_max_start_depth
 let ts_language_copy = TS.ts_language_copy
 let ts_language_delete = TS.ts_language_delete
