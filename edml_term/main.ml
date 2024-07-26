@@ -29,6 +29,8 @@ let setup_terminal () =
   setup_interrupt_signal ()
 ;;
 
+let setup_logger () = Logger.init "/Users/wiru/code/edml/edml.log" Async
+
 let render_change (change : Viewport.change) =
   Ansi.Cursor.move_to ~col:change.col ~row:change.row;
   Fmt.pr "%c" change.cell.symbol
@@ -179,6 +181,7 @@ let rec event_loop viewport editor =
 
 let () =
   setup_terminal ();
+  setup_logger ();
   let args = Sys.get_argv () in
   let argc = Array.length args in
   let path = if argc >= 2 then Array.get args 1 else "" in
@@ -186,9 +189,11 @@ let () =
   let pane = Base.get_focused_pane editor in
   let dimensions = Ansi.Terminal.size () in
   let viewport = ref @@ Viewport.make ~cols:dimensions.cols ~rows:dimensions.rows in
+  Logger.log "initialized data" Info;
   render_tab viewport (List.nth_exn editor.tabs 0) editor !(pane.cursor);
   render_whole_viewport !viewport;
   render_cursor_in_view ~cursor:!(pane.cursor);
+  Logger.log "rendered viewport" Info;
   Out_channel.flush stdout;
   event_loop viewport editor;
   restore_terminal ()

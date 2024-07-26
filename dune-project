@@ -67,3 +67,12 @@
   (depends ocaml dune)
   (tags
     (topics terminal editor "text editor")))
+
+(package
+  (name logger)
+  (allow_empty)
+  (synopsis "silly terminal text editor")
+  (description "its definitely something")
+  (depends ocaml dune)
+  (tags
+    (topics terminal editor "text editor")))

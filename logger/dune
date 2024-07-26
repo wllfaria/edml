@@ -1,0 +1,3 @@
+(library
+  (name logger)
+  (libraries core core_unix))
