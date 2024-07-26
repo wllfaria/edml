@@ -29,6 +29,7 @@ type tab =
 type editor =
   { tabs : tab list
   ; mode : mode
+  ; quitting : bool
   ; buffers : Text_buffer.text_buffer list
   ; active_tab : int
   ; parsers : (language_id, Tree_sitter.ts_parser) Hashtbl.t [@opaque]
@@ -102,7 +103,13 @@ let init path =
   let buffer = make_buffer text_object path language_id tree matches in
   let pane = make_pane buffer.id in
   let tab = { panes = Single pane; active_pane = pane.id } in
-  { buffers = [ buffer ]; tabs = [ tab ]; active_tab = 0; mode = Normal; parsers }
+  { buffers = [ buffer ]
+  ; tabs = [ tab ]
+  ; active_tab = 0
+  ; mode = Normal
+  ; parsers
+  ; quitting = false
+  }
 ;;
 
 let rec find_pane tree id =

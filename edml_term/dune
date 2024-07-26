@@ -2,4 +2,4 @@
   (package edml_term)
   (name main)
   (public_name edml_term)
-  (libraries edml_term_lib))
+  (libraries edml_term_lib core core_unix))

@@ -6,11 +6,27 @@ open Edml_term_lib
 open Viewport
 open Base
 
-let setup_terminal _ =
+let restore_terminal () =
+  Ansi.Terminal.leave_alternate_screen ();
+  Ansi.Terminal.disable_raw_mode ();
+  Ansi.Cursor.show ();
+  exit 0
+;;
+
+let setup_interrupt_signal () =
+  try
+    let _ = Signal.Expert.(signal Signal.int (`Handle (fun _ -> restore_terminal ()))) in
+    ()
+  with
+  | Core_unix.Unix_error _ -> ()
+;;
+
+let setup_terminal () =
   Ansi.Terminal.enable_raw_mode ();
   Ansi.Terminal.clear_screen ();
   Ansi.Terminal.enter_alternate_screen ();
-  Ansi.Cursor.move_to ~col:0 ~row:0
+  Ansi.Cursor.move_to ~col:0 ~row:0;
+  setup_interrupt_signal ()
 ;;
 
 let render_change (change : Viewport.change) =
@@ -158,7 +174,7 @@ let rec event_loop viewport editor =
   render_cursor_in_view ~cursor;
   Ansi.Cursor.show ();
   Out_channel.flush stdout;
-  event_loop viewport editor
+  if editor.quitting then () else event_loop viewport editor
 ;;
 
 let () =
@@ -174,5 +190,6 @@ let () =
   render_whole_viewport !viewport;
   render_cursor_in_view ~cursor:!(pane.cursor);
   Out_channel.flush stdout;
-  event_loop viewport editor
+  event_loop viewport editor;
+  restore_terminal ()
 ;;
