@@ -80,25 +80,28 @@ let error msg =
 
 let append_to_log_file msg =
   let filename = !log_file_path in
-  let fd = openfile filename ~mode:[ O_WRONLY; O_APPEND; O_CREAT ] in
   try
-    let len = String.length msg in
-    let rec write_loop offset =
-      if offset < len
-      then (
-        let written =
-          write fd ~buf:(Bytes.of_string msg) ~pos:offset ~len:(len - offset)
-        in
-        write_loop (offset + written))
-      else ()
-    in
-    write_loop 0;
-    close fd
+    let fd = openfile filename ~mode:[ O_WRONLY; O_APPEND; O_CREAT ] in
+    try
+      let len = String.length msg in
+      let rec write_loop offset =
+        if offset < len
+        then (
+          let written =
+            write fd ~buf:(Bytes.of_string msg) ~pos:offset ~len:(len - offset)
+          in
+          write_loop (offset + written))
+        else ()
+      in
+      write_loop 0;
+      close fd
+    with
+    | _ -> close fd
   with
-  | _ -> close fd
+  | _ -> ()
 ;;
 
-let log msg level =
+let log msg ~level =
   match level with
   | Trace -> trace msg
   | Info -> info msg

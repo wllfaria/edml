@@ -6,3 +6,5 @@ let next_id ~id_ref =
   id_ref := !id_ref + 1;
   id
 ;;
+
+let is_in_range num (start, finish) = start >= num && finish < num

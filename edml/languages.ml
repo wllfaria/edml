@@ -51,7 +51,7 @@ let language_id_of_filetype (filetype : filetype) =
 
 let load_query filetype =
   (* TODO: remove this absolute path lol *)
-  let base_path = "/Users/wiru/code/edml/languages" in
+  let base_path = "/home/wiru/code/edml/languages" in
   let language = string_of_language_id @@ language_id_of_filetype filetype in
   let query_kind = string_of_filetype filetype in
   let path = Fs.join_paths [ base_path; language; query_kind ^ ".scm" ] in
@@ -72,4 +72,45 @@ let language_of_language_id language_id =
   | Javascript -> Option.return @@ Tree_sitter.tree_sitter_javascript ()
   | Ocaml -> Option.return @@ Tree_sitter.tree_sitter_ocaml ()
   | PlainText -> None
+;;
+
+let query_matches_map_of_list (matches : Tree_sitter.query_match list) map =
+  List.iter matches ~f:(fun m ->
+    List.iter m.captures ~f:(fun c ->
+      let start_byte = c.node.range.start_byte in
+      let end_byte = c.node.range.end_byte in
+      let _ = Hashtbl.add map ~key:(start_byte, end_byte) ~data:"lol" in
+      ()));
+  map
+;;
+
+let maybe_parse_tree text_object parsers filetype language_id =
+  let map = Hashtbl.create (module IntTuple) in
+  match Hashtbl.find parsers language_id with
+  | None -> None, map
+  | Some parser ->
+    let source = Text_object.to_string !text_object in
+    (match Tree_sitter.ts_parser_parse_string parser None source with
+     | None -> None, map
+     | Some tree ->
+       (match language_of_language_id language_id with
+        | None -> None, map
+        | Some language ->
+          (match Tree_sitter.ts_parser_set_language parser language with
+           | false -> None, map
+           | _ ->
+             (match load_query filetype with
+              | None -> None, map
+              | Some query ->
+                (match Tree_sitter.ts_query_new language query with
+                 | Error _ -> None, map
+                 | Ok query ->
+                   let cursor = Tree_sitter.ts_query_cursor_new () in
+                   let root_node = Tree_sitter.ts_tree_root_node tree in
+                   let matches =
+                     Tree_sitter.ts_query_cursor_matches cursor query root_node
+                   in
+                   Logger.log ~level:Error @@ Format.sprintf "%d" @@ List.length matches;
+                   let matches_map = query_matches_map_of_list matches map in
+                   Some tree, matches_map)))))
 ;;

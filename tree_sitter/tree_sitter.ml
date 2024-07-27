@@ -103,7 +103,7 @@ let ts_query_new language code =
       | _ -> unreachable ()
     in
     Error (uint32_to_int !@err_offset, err_type))
-  else Ok result
+  else Ok (ts_query_to_query result)
 ;;
 
 let ts_tree_copy = TS.ts_tree_copy
@@ -121,14 +121,14 @@ let ts_tree_root_node_with_offset tree offset extent =
   ts_node_to_node @@ TS.ts_tree_root_node_with_offset tree offset extent
 ;;
 
-let ts_query_cursor_exec cursor query node =
+let ts_query_cursor_exec cursor query (node : Tree_sitter_types.node) =
   let node = node.inner in
   TS.ts_query_cursor_exec cursor query node
 ;;
 
 let ts_query_cursor_matches cursor query node =
   let open Ctypes in
-  ts_query_cursor_exec cursor query node;
+  ts_query_cursor_exec cursor query.inner node;
   let query_match = Ctypes.allocate_n Types.ts_query_match ~count:1 in
   let rec poll_matches acc =
     let result = TS.ts_query_cursor_next_match cursor query_match in

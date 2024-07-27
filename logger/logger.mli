@@ -7,7 +7,7 @@ type log_level =
 type log_mode = Async
 
 val init : string -> log_mode -> unit
-val log : string -> log_level -> unit
+val log : string -> level:log_level -> unit
 val trace : string -> unit
 val info : string -> unit
 val debug : string -> unit

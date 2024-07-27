@@ -55,3 +55,10 @@ type query_match =
   ; captures : query_capture list
   }
 [@@deriving show { with_path = false }]
+
+type query =
+  { inner : Bindings.Types.ts_query [@opaque]
+  ; capture_names : string array
+  ; capture_quantifiers : int array array
+  }
+[@@deriving show { with_path = false }]

@@ -6,8 +6,6 @@ let file_exists path =
   | Error _ -> false
 ;;
 
-let close_fd fd = Core_unix.close fd
-
 let maybe_read_file path =
   if file_exists path
   then (
@@ -18,8 +16,8 @@ let maybe_read_file path =
        let _ = Core_unix.read fd ~buf:buffer in
        ()
      with
-     | Core_unix.Unix_error _ -> close_fd fd);
-    close_fd fd;
+     | Core_unix.Unix_error _ -> Core_unix.close fd);
+    Core_unix.close fd;
     Some (Bytes.to_string buffer))
   else None
 ;;

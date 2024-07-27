@@ -103,3 +103,58 @@ let ts_query_match_to_query_match ts_match =
   let captures = List.map captures ~f:ts_query_capture_to_query_capture in
   { id; pattern_index; capture_count; captures }
 ;;
+
+let get_query_capture_names ts_query idx max =
+  let capture_names = Array.create "" ~len:max in
+  let open Ctypes in
+  let rec loop idx max =
+    match idx < max with
+    | true ->
+      let uidx = uint32_of_int idx in
+      let len = allocate_n uint32_t ~count:1 in
+      let result = TS.ts_query_capture_name_for_id ts_query uidx len in
+      capture_names.(idx) <- result;
+      loop (idx + 1) max
+    | false -> ()
+  in
+  loop idx max;
+  capture_names
+;;
+
+let get_query_capture_quantifiers ts_query pattern_idx pattern_count capture_count =
+  let capture_quantifiers =
+    Array.create ~len:pattern_count @@ Array.create 0 ~len:capture_count
+  in
+  let rec loop pattern_idx max =
+    match pattern_idx < max with
+    | true ->
+      let pattern_quantifiers = Array.create 0 ~len:max in
+      get_pattern_capture_quantifiers 0 capture_count pattern_quantifiers;
+      loop (pattern_idx + 1) max
+    | false -> ()
+  and get_pattern_capture_quantifiers capture_idx max acc =
+    match capture_idx < max with
+    | true ->
+      let capture_uidx = uint32_of_int capture_idx in
+      let pattern_uidx = uint32_of_int pattern_idx in
+      let quantifier =
+        uint32_to_int
+        @@ TS.ts_query_capture_quantifier_for_id ts_query pattern_uidx capture_uidx
+      in
+      acc.(capture_idx) <- quantifier;
+      get_pattern_capture_quantifiers (capture_idx + 1) max acc
+    | false -> ()
+  in
+  loop 0 pattern_count;
+  capture_quantifiers
+;;
+
+let ts_query_to_query ts_query =
+  let capture_count = uint32_to_int @@ TS.ts_query_capture_count ts_query in
+  let pattern_count = uint32_to_int @@ TS.ts_query_pattern_count ts_query in
+  let capture_names = get_query_capture_names ts_query 0 capture_count in
+  let capture_quantifiers =
+    get_query_capture_quantifiers ts_query 0 pattern_count capture_count
+  in
+  { inner = ts_query; capture_names; capture_quantifiers }
+;;
