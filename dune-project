@@ -37,7 +37,7 @@
   (allow_empty)
   (synopsis "silly terminal text editor")
   (description "its definitely something")
-  (depends ocaml dune)
+  (depends ocaml dune ctypes)
   (tags
     (topics terminal editor "text editor")))
 

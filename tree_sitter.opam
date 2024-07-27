@@ -12,6 +12,7 @@ bug-reports: "https://github.com/wllfaria/edml/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.16"}
+  "ctypes"
   "odoc" {with-doc}
 ]
 build: [
