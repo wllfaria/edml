@@ -106,6 +106,8 @@ let handle_action ~text_object ~action ~anchor =
   | DeleteUntilEOL -> delete_until_eol ~anchor ~text_object
 ;;
 
+let get_line_at text_object line_num = List.nth text_object.content line_num
+
 let to_string text_object =
   List.fold text_object.content ~init:"" ~f:(fun acc l -> acc ^ l ^ "\n")
 ;;

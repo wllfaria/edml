@@ -74,18 +74,28 @@ let language_of_language_id language_id =
   | PlainText -> None
 ;;
 
-let query_matches_map_of_list (matches : Tree_sitter.query_match list) map =
+let query_matches_map_of_list
+  (query : Tree_sitter.query)
+  (matches : Tree_sitter.query_match list)
+  map
+  =
   List.iter matches ~f:(fun m ->
     List.iter m.captures ~f:(fun c ->
-      let start_byte = c.node.range.start_byte in
-      let end_byte = c.node.range.end_byte in
-      let _ = Hashtbl.add map ~key:(start_byte, end_byte) ~data:"lol" in
+      let start_point = c.node.range.start_point in
+      let end_point = c.node.range.end_point in
+      let capture_name = query.capture_names.(c.index) in
+      let _ =
+        Hashtbl.add
+          map
+          ~key:start_point.row
+          ~data:(start_point.col, end_point.col, capture_name)
+      in
       ()));
   map
 ;;
 
 let maybe_parse_tree text_object parsers filetype language_id =
-  let map = Hashtbl.create (module IntTuple) in
+  let map = Hashtbl.create (module Int) in
   match Hashtbl.find parsers language_id with
   | None -> None, map
   | Some parser ->
@@ -110,7 +120,6 @@ let maybe_parse_tree text_object parsers filetype language_id =
                    let matches =
                      Tree_sitter.ts_query_cursor_matches cursor query root_node
                    in
-                   Logger.log ~level:Error @@ Format.sprintf "%d" @@ List.length matches;
-                   let matches_map = query_matches_map_of_list matches map in
+                   let matches_map = query_matches_map_of_list query matches map in
                    Some tree, matches_map)))))
 ;;

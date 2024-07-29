@@ -104,7 +104,7 @@ let rec render_split
     | Single pane -> render_pane viewport ~pane ~position ~editor ~cursor)
 ;;
 
-let render_tab viewport (tab : Base.tab) (editor : Base.editor) cursor =
+let render_tab viewport (tab : Base.tab) (editor : Base.editor) (cursor : Cursor.cursor) =
   let vp = viewport in
   match tab.panes with
   | Split split ->
