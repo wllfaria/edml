@@ -16,4 +16,4 @@ type mode =
   | Insert
 [@@deriving eq, show { with_path = false }]
 
-type match_map = (int, int * int * string) Hashtbl.t
+type match_map = (int, (int * int * string) list) Hashtbl.t

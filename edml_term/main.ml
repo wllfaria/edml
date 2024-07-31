@@ -5,11 +5,11 @@ open Types
 open Edml_term_lib
 open Viewport
 open Base
+open Ansi.Command
 
 let restore_terminal () =
-  Ansi.Terminal.leave_alternate_screen ();
   Ansi.Terminal.disable_raw_mode ();
-  Ansi.Cursor.show ();
+  execute [ Terminal LeaveAlternateScreen; Cursor Show ];
   exit 0
 ;;
 
@@ -23,17 +23,19 @@ let setup_interrupt_signal () =
 
 let setup_terminal () =
   Ansi.Terminal.enable_raw_mode ();
-  Ansi.Terminal.clear_screen ();
-  Ansi.Terminal.enter_alternate_screen ();
-  Ansi.Cursor.move_to ~col:0 ~row:0;
+  execute [ Terminal EnterAlternateScreen; Cursor (MoveTo (0, 0)) ];
   setup_interrupt_signal ()
 ;;
 
-let setup_logger () = Logger.init "/home/wiru/code/edml/edml.log" Async
+let setup_logger () = Logger.init "/Users/wiru/code/edml/edml.log" Async
 
 let render_change (change : Viewport.change) =
-  Ansi.Cursor.move_to ~col:change.col ~row:change.row;
-  Fmt.pr "%c" change.cell.symbol
+  queue
+    [ Cursor (MoveTo (change.col, change.row))
+    ; SetForegroundColor change.cell.styles.fg
+    ; SetBackgroundColor change.cell.styles.bg
+    ; Print (Char.to_string change.cell.symbol)
+    ]
 ;;
 
 let render_whole_viewport viewport =
@@ -47,7 +49,7 @@ let render_viewport_diffs prev curr =
 
 let render_pane viewport ~(pane : Pane.pane) ~position ~(editor : Base.editor) ~cursor =
   let buffer = List.nth_exn editor.buffers pane.buffer_id in
-  Viewport.fill !(buffer.text_object) cursor viewport position
+  Viewport.fill !(buffer.text_object) cursor viewport position buffer.matches
 ;;
 
 let distribute_dimension dimension ratios =
@@ -161,27 +163,28 @@ let render_cursor_in_view ~cursor =
   let open Cursor in
   let row = cursor.row - cursor.offset_row in
   let col = cursor.col - cursor.offset_col in
-  Ansi.Cursor.move_to ~col ~row
+  queue [ Cursor (MoveTo (col, row)) ]
 ;;
 
 let rec event_loop viewport editor =
-  Ansi.Cursor.hide ();
   let previous_viewport = Viewport.copy !viewport in
   let tab = List.nth_exn editor.tabs editor.active_tab in
   let pane = expect ~msg:"must have a pane" @@ find_pane tab.panes tab.active_pane in
   let editor = handle_action ~editor ~pane in
   let cursor = !(pane.cursor) in
+  execute [ Cursor Hide ];
   render_tab viewport tab editor cursor;
   render_viewport_diffs previous_viewport !viewport;
   render_cursor_in_view ~cursor;
-  Ansi.Cursor.show ();
-  Out_channel.flush stdout;
+  queue [ Cursor Show ];
+  flush ();
   if editor.quitting then () else event_loop viewport editor
 ;;
 
 let () =
   setup_terminal ();
   setup_logger ();
+  Load_colorscheme.load_colors ();
   let args = Sys.get_argv () in
   let argc = Array.length args in
   let path = if argc >= 2 then Array.get args 1 else "" in
@@ -192,8 +195,7 @@ let () =
   render_tab viewport (List.nth_exn editor.tabs 0) editor !(pane.cursor);
   render_whole_viewport !viewport;
   render_cursor_in_view ~cursor:!(pane.cursor);
-  Logger.log "rendered viewport" ~level:Info;
-  Out_channel.flush stdout;
+  flush ();
   event_loop viewport editor;
   restore_terminal ()
 ;;

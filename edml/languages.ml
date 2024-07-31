@@ -51,7 +51,7 @@ let language_id_of_filetype (filetype : filetype) =
 
 let load_query filetype =
   (* TODO: remove this absolute path lol *)
-  let base_path = "/home/wiru/code/edml/languages" in
+  let base_path = "/Users/wiru/code/edml/languages" in
   let language = string_of_language_id @@ language_id_of_filetype filetype in
   let query_kind = string_of_filetype filetype in
   let path = Fs.join_paths [ base_path; language; query_kind ^ ".scm" ] in
@@ -84,13 +84,16 @@ let query_matches_map_of_list
       let start_point = c.node.range.start_point in
       let end_point = c.node.range.end_point in
       let capture_name = query.capture_names.(c.index) in
-      let _ =
-        Hashtbl.add
-          map
-          ~key:start_point.row
-          ~data:(start_point.col, end_point.col, capture_name)
-      in
-      ()));
+      match Hashtbl.find map start_point.row with
+      | Some existing ->
+        let new_values = start_point.col, end_point.col, capture_name in
+        Hashtbl.set map ~key:start_point.row ~data:(new_values :: existing)
+      | None ->
+        ignore
+        @@ Hashtbl.add
+             map
+             ~key:start_point.row
+             ~data:[ start_point.col, end_point.col, capture_name ]));
   map
 ;;
 
@@ -120,6 +123,6 @@ let maybe_parse_tree text_object parsers filetype language_id =
                    let matches =
                      Tree_sitter.ts_query_cursor_matches cursor query root_node
                    in
-                   let matches_map = query_matches_map_of_list query matches map in
-                   Some tree, matches_map)))))
+                   let map = query_matches_map_of_list query matches map in
+                   Some tree, map)))))
 ;;

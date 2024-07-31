@@ -110,19 +110,44 @@ let log msg ~level =
   | Error -> error msg
 ;;
 
+let thread = ref None
+let queue = ref []
+let queue_mutex = Mutex.create ()
+let queue_cond = Condition.create ()
+
 let async_handler =
   { effc =
       (fun (type a) (eff : a t) ->
         match eff with
         | Log msg ->
-          let _ = Thread.create (fun msg -> append_to_log_file msg) msg in
+          Mutex.lock queue_mutex;
+          queue := !queue @ [ msg ];
+          Condition.signal queue_cond;
+          Mutex.unlock queue_mutex;
           Some (fun (k : (a, _) continuation) -> continue k ())
         | _ -> None)
   }
 ;;
 
+let logger_thread () =
+  let rec loop () =
+    Mutex.lock queue_mutex;
+    while List.length !queue = 0 do
+      Condition.wait queue_cond queue_mutex
+    done;
+    let msgs = !queue in
+    queue := [];
+    Mutex.unlock queue_mutex;
+    List.iter append_to_log_file msgs;
+    loop ()
+  in
+  loop ()
+;;
+
 let init path mode =
   log_file_path := path;
   match mode with
-  | Async -> handler := async_handler
+  | Async ->
+    thread := Some (Thread.create logger_thread ());
+    handler := async_handler
 ;;

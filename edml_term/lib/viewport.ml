@@ -16,18 +16,9 @@ type t =
   }
 [@@deriving eq, show { with_path = false }]
 
-and cell_style =
-  { fg : color option
-  ; bg : color option
-  ; bold : bool
-  }
-[@@deriving eq, show { with_path = false }]
-
-and color = Color of string [@@deriving eq, show]
-
 and cell =
   { symbol : char
-  ; styles : cell_style
+  ; styles : Load_colorscheme.style
   }
 [@@deriving eq, show { with_path = false }]
 
@@ -38,11 +29,7 @@ and change =
   }
 [@@deriving eq, show { with_path = false }]
 
-let make_cell () = { symbol = ' '; styles = { fg = None; bg = None; bold = false } }
-
-let make_cell_with_symbol symbol =
-  { symbol; styles = { fg = None; bg = None; bold = false } }
-;;
+let make_cell () = { symbol = ' '; styles = Load_colorscheme.empty_style () }
 
 let make ~cols ~rows =
   let cells = Array.create ~len:(cols * rows) (make_cell ()) in
@@ -64,9 +51,10 @@ let set_text text ~col ~row ~vp =
   { vp with cells = new_cells }
 ;;
 
-let set_cell char ~col ~row ~vp =
+let set_cell char ~col ~row ~vp ~styles =
   let pos = normalize_col_row col row !vp.cols in
-  !vp.cells.(pos) <- make_cell_with_symbol char
+  let cell = { symbol = char; styles } in
+  !vp.cells.(pos) <- cell
 ;;
 
 let to_changes viewport =
@@ -100,12 +88,44 @@ let extract_symbol line (cursor : Cursor.cursor) col =
   if phys_same symbol '\r' || phys_same symbol '\n' then ' ' else symbol
 ;;
 
-let fill text_object (cursor : Cursor.cursor) viewport (position : position) =
+let within_range (start, finish) needle =
+  if needle >= start && needle < finish then true else false
+;;
+
+let fill
+  text_object
+  (cursor : Cursor.cursor)
+  viewport
+  (position : position)
+  (matches : Edml.Types.match_map)
+  =
   for row = position.row to position.row + position.height - 1 do
     let line = extract_line text_object cursor row in
     for col = 0 to position.width - 1 do
       let symbol = extract_symbol line cursor col in
-      set_cell ~row ~col ~vp:viewport symbol
+      let styles =
+        match Hashtbl.find matches (cursor.offset_row + row) with
+        | Some line_matches ->
+          let capture =
+            List.find_map line_matches ~f:(fun (start, finish, name) ->
+              if within_range (start, finish) (cursor.offset_col + col)
+              then Some name
+              else None)
+          in
+          (match capture with
+           | Some name ->
+             Logger.info
+             @@ Format.sprintf
+                  "Loaded colors: %d - trying to get %s"
+                  (Hashtbl.length !Load_colorscheme.colors)
+                  name;
+             (match Hashtbl.find !Load_colorscheme.colors name with
+              | Some a -> a
+              | None -> Load_colorscheme.empty_style ())
+           | None -> Load_colorscheme.empty_style ())
+        | None -> Load_colorscheme.empty_style ()
+      in
+      set_cell ~row ~col ~vp:viewport symbol ~styles
     done
   done
 ;;
