@@ -51,7 +51,7 @@ let language_id_of_filetype (filetype : filetype) =
 
 let load_query filetype =
   (* TODO: remove this absolute path lol *)
-  let base_path = "/home/wiru/code/edml/languages" in
+  let base_path = "/Users/wiru/code/edml/languages" in
   let language = string_of_language_id @@ language_id_of_filetype filetype in
   let query_kind = string_of_filetype filetype in
   let path = Fs.join_paths [ base_path; language; query_kind ^ ".scm" ] in

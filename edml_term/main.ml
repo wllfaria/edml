@@ -27,7 +27,7 @@ let setup_terminal () =
   setup_interrupt_signal ()
 ;;
 
-let setup_logger () = Logger.init "/home/wiru/code/edml/edml.log" Async
+let setup_logger () = Logger.init "/Users/wiru/code/edml/edml.log" Async
 
 let render_change (change : Viewport.change) =
   queue
