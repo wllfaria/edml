@@ -45,3 +45,5 @@ _esy/
 esy.lock/
 
 profile.dump
+
+edml.log

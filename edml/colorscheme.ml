@@ -8,35 +8,9 @@ type style =
   ; link : string option
   }
 
-let color_black_0 = "#0d0c0c"
-let color_black_1 = "#12120f"
-let color_black_2 = "#1D1C19"
-let color_black_3 = "#181616"
-let color_black_4 = "#282727"
-let color_black_5 = "#393836"
-let color_black_6 = "#625e5a"
-let color_white_0 = "#c5c9c5"
-let color_white_1 = "#c5c9c5"
-let color_green_0 = "#87a987"
-let color_green_1 = "#8a9a7b"
-let color_pink_0 = "#a292a3"
-let color_orange_0 = "#b6927b"
-let color_orange_1 = "#b98d7b"
-let color_gray_0 = "#a6a69c"
-let color_gray_2 = "#9e9b93"
-let color_gray_3 = "#7a8382"
-let color_blue_0 = "#223249"
-let color_blue_1 = "#8ba4b0"
-let color_violet = "#8992a7"
-let color_red_0 = "#c4746e"
-let color_aqua_0 = "#8ea4a2"
-let color_ash_0 = "#737c73"
-let color_teal_0 = "#949fb5"
-let color_yellow_0 = "#c4b28a"
-
 let default_style =
-  { fg = color_white_0
-  ; bg = Some color_black_3
+  { fg = "#ece1d7"
+  ; bg = Some "#292522"
   ; italic = false
   ; bold = false
   ; underline = false
@@ -75,83 +49,84 @@ let with_style
 ;;
 
 let colors () =
-  [ "variable", with_style ~fg:color_white_0 ()
-  ; "variable.builtin", with_style ~fg:color_teal_0 ()
-  ; "variable.parameter", with_style ~fg:color_gray_0 ()
-  ; "variable.member", with_style ~fg:color_yellow_0 ()
-  ; "string.regex", with_style ~fg:color_red_0 ()
-  ; "string.escape", with_style ~fg:color_red_0 ~bold:true ()
-  ; "string.special.symbol", with_style ~fg:color_yellow_0 ()
-  ; "string.special.url", with_style ~fg:color_teal_0 ~underline:true ()
-  ; "attribute", with_style ~link:"constant" ()
-  ; "constructor", with_style ~fg:color_teal_0 ()
-  ; "operator", with_style ~fg:color_red_0 ()
-  ; "keyword.operator", with_style ~fg:color_red_0 ~bold:true ()
-  ; "keyword.import", with_style ~fg:color_blue_0 ()
-  ; "keyword.return", with_style ~fg:color_red_0 ()
-  ; "keyword.exception", with_style ~fg:color_red_0 ()
-  ; "keyword", with_style ~fg:color_red_0 ()
-  ; "punctuation.delimiter", with_style ~fg:color_gray_2 ()
-  ; "punctuation.bracket", with_style ~fg:color_gray_2 ()
-  ; "punctuation.special", with_style ~fg:color_teal_0 ()
-  ; "punctuation", with_style ~fg:color_gray_2 ()
-  ; "comment", with_style ~fg:color_gray_3 ()
-  ; "comment.error", with_style ~fg:color_white_0 ~bg:color_red_0 ()
-  ; "comment.warning", with_style ~fg:color_blue_0 ~bg:color_aqua_0 ()
-  ; "comment.note", with_style ~fg:color_blue_0 ~bg:color_aqua_0 ()
+  [ "attribute", with_style ~fg:"#8b7449" ()
+  ; "operator", with_style ~fg:"#d47766" ()
+  ; "tag", with_style ~fg:"#8b7449" ()
+  ; "tag.attribute", with_style ~fg:"#ebc06d" ()
+  ; "tag.delimiter", with_style ~fg:"#8d8183" ()
+  ; "boolean", with_style ~link:"number" ()
+  ; "number", with_style ~fg:"#cf9bc2" ()
+  ; "identifier", with_style ~fg:"#ECE1D7" ()
+  ; "number.float", with_style ~link:"number" ()
+  ; "character", with_style ~fg:"#7f91b2" ()
+  ; "character.special", with_style ~fg:"#ebc06d" ()
+  ; "string", with_style ~fg:"#a3a9ce" ()
+  ; "string.documentation", with_style ~fg:"#a3a9ce" ()
+  ; "string.escape", with_style ~fg:"#7f91b2" ()
+  ; "constructor", with_style ~fg:"#EBC06D" ()
+  ; "string.regexp", with_style ~fg:"#a3a9ce" ()
+  ; "string.special", with_style ~fg:"#89b3b6" ()
+  ; "string.special.symbol", with_style ~fg:"#ece1d7" ~italic:true ()
+  ; "string.special.path", with_style ~fg:"#7f91b2" ()
+  ; "string.special.url", with_style ~fg:"#7f91b2" ()
+  ; "keyword", with_style ~fg:"#E49B5D" ()
+  ; "keyword.type", with_style ~fg:"#E49B5D" ()
+  ; "keyword.operator", with_style ~fg:"#8d8183" ~bold:true ()
+  ; "keyword.import", with_style ~fg:"#b380b0" ()
+  ; "keyword.return", with_style ~fg:"#b380b0" ()
+  ; "keyword.exception", with_style ~fg:"#8d8183" ()
+  ; "constant", with_style ~fg:"#B380B0" ()
+  ; "constant.builtin", with_style ~fg:"#ff0000" ()
+  ; "constant.macro", with_style ~fg:"#ece1d7" ()
+  ; "module", with_style ~fg:"#ece1d7" ()
+  ; "module.builtin", with_style ~link:"module" ()
+  ; "label", with_style ~fg:"#89b3b6" ()
+  ; "variable", with_style ~fg:"#ece1d7" ()
+  ; "variable.builtin", with_style ~link:"string.special.symbol" ()
+  ; "variable.parameter", with_style ~fg:"#ece1d7" ()
+  ; "variable.member", with_style ~fg:"#ece1d7" ()
+  ; "type", with_style ~fg:"#7b9695" ()
+  ; "type.builtin", with_style ~link:"type" ()
+  ; "type.definition", with_style ~fg:"#7b9695" ()
+  ; "type.qualifier", with_style ~fg:"#8b7449" ()
+  ; "function", with_style ~fg:"#ebc06d" ()
+  ; "function.builtin", with_style ~fg:"#ebc06d" ()
+  ; "function.macro", with_style ~link:"function" ()
+  ; "statement", with_style ~fg:"#E49B5D" ()
+  ; "punctuation", with_style ~fg:"#8b7449" ()
+  ; "punctuation.delimiter", with_style ~fg:"#BD8183" ()
+  ; "punctuation.bracket", with_style ~fg:"#8b7449" ()
+  ; "punctuation.special", with_style ~fg:"#ebc06d" ()
+  ; "comment", with_style ~fg:"#c1a783" ()
+  ; "comment.todo", with_style ~fg:"#c1a783" ~bold:true ()
+  ; "comment.error", with_style ~link:"comment.todo" ()
+  ; "comment.warning", with_style ~link:"comment.todo" ()
+  ; "comment.note", with_style ~link:"comment.todo" ()
+  ; "markup.heading", with_style ~fg:"#8b7449" ()
+  ; "markup.heading.2", with_style ~fg:"#ebc06d" ()
+  ; "markup.heading.3", with_style ~fg:"#85b695" ()
+  ; "markup.heading.4", with_style ~fg:"#89b3b6" ()
   ; "markup.strong", with_style ~bold:true ()
   ; "markup.italic", with_style ~italic:true ()
   ; "markup.strikethrough", with_style ~strikethrough:true ()
   ; "markup.underline", with_style ~underline:true ()
-  ; "markup.heading", with_style ~link:"function" ()
-  ; "markup.quote", with_style ~link:"variable.parameter" ()
-  ; "markup.math", with_style ~link:"constant" ()
-  ; "markup.environment", with_style ~link:"keyword" ()
+  ; "markup.quote", with_style ~link:"comment" ()
+  ; "markup.math", with_style ~fg:"#8b7449" ()
+  ; "markup.link", with_style ~link:"string.special.url" ()
   ; "markup.link.url", with_style ~link:"string.special.url" ()
-  ; "markup.raw", with_style ~link:"string" ()
-  ; "diff.plus", with_style ~fg:color_green_0 ()
-  ; "diff.minus", with_style ~fg:color_red_0 ()
-  ; "diff.delta", with_style ~fg:color_yellow_0 ()
-  ; "tag.attribute", with_style ~fg:color_yellow_0 ()
-  ; "tag.delimiter", with_style ~fg:color_gray_2 ()
-  ; "string", with_style ~fg:"#ff0000" ()
-  ; "boolean", with_style ~fg:"#ff0000" ()
-  ; "character", with_style ~fg:"#ff0000" ()
-  ; "conditional", with_style ~fg:"#ff0000" ()
-  ; "constant.builtin", with_style ~fg:"#ff0000" ()
-  ; "keyword.import", with_style ~fg:"#ff0000" ()
-  ; "module", with_style ~fg:"#ff0000" ()
-  ; "constant", with_style ~fg:"#ff0000" ()
-  ; "constant.macro", with_style ~fg:"#ff0000" ()
-  ; "debug", with_style ~fg:"#ff0000" ()
-  ; "define", with_style ~fg:"#ff0000" ()
-  ; "exception", with_style ~fg:"#ff0000" ()
-  ; "field", with_style ~fg:"#ff0000" ()
-  ; "float", with_style ~fg:"#ff0000" ()
-  ; "function.builtin", with_style ~fg:"#ff0000" ()
-  ; "function", with_style ~fg:"#ff0000" ()
-  ; "function.macro", with_style ~fg:"#ff0000" ()
-  ; "include", with_style ~fg:"#ff0000" ()
-  ; "label", with_style ~fg:"#ff0000" ()
-  ; "macro", with_style ~fg:"#ff0000" ()
-  ; "method", with_style ~fg:"#ff0000" ()
-  ; "namespace", with_style ~fg:"#ff0000" ()
-  ; "number", with_style ~fg:"#ff0000" ()
-  ; "parameter", with_style ~fg:"#ff0000" ()
-  ; "preproc", with_style ~fg:"#ff0000" ()
-  ; "property", with_style ~fg:"#ff0000" ()
-  ; "repeat", with_style ~fg:"#ff0000" ()
-  ; "storageclass", with_style ~fg:"#ff0000" ()
-  ; "structure", with_style ~fg:"#ff0000" ()
-  ; "tag", with_style ~fg:"#ff0000" ()
-  ; "text", with_style ~fg:"#ff0000" ()
-  ; "text.literal", with_style ~fg:"#ff0000" ()
-  ; "text.reference", with_style ~fg:"#ff0000" ()
-  ; "text.title", with_style ~fg:"#ff0000" ()
-  ; "text.todo", with_style ~fg:"#ff0000" ()
-  ; "text.underline", with_style ~fg:"#ff0000" ()
-  ; "text.uri", with_style ~fg:"#ff0000" ()
-  ; "type.definition", with_style ~fg:"#ff0000" ()
-  ; "type", with_style ~fg:"#ff0000" ()
+  ; "markup.raw", with_style ~fg:"#c1a783" ()
+  ; "conditional", with_style ~fg:"#8b7449" ()
+  ; "debug", with_style ~fg:"#ebc06d" ()
+  ; "define", with_style ~fg:"#ebc06d" ()
+  ; "exception", with_style ~fg:"#8b7449" ()
+  ; "float", with_style ~link:"number" ()
+  ; "include", with_style ~fg:"#8b7449" ()
+  ; "macro", with_style ~fg:"#8b7449" ()
+  ; "preproc", with_style ~fg:"#8b7449" ()
+  ; "property", with_style ~fg:"#ece1d7" ()
+  ; "repeat", with_style ~fg:"#8b7449" ()
+  ; "storageclass", with_style ~fg:"#7b9695" ()
+  ; "structure", with_style ~fg:"#7b9695" ()
+  ; "tag", with_style ~fg:"#8b7449" ()
   ]
 ;;

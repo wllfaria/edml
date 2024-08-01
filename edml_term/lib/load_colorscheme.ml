@@ -24,7 +24,11 @@ let load_colors () =
            ~key:name
            ~data:{ fg = Ansi.Color.from fg; bg = Ansi.Color.from bg });
   List.iter !to_link ~f:(fun (name, link_name) ->
-    let style = Hashtbl.find_exn map link_name in
+    let style =
+      match Hashtbl.find map link_name with
+      | Some s -> s
+      | None -> failwith @@ Format.sprintf "name: %s - link_name: %s" name link_name
+    in
     ignore @@ Hashtbl.add map ~key:name ~data:style);
   colors := map
 ;;
