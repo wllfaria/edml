@@ -1,7 +1,7 @@
 (library
  (name ansi)
  (inline_tests)
- (libraries unix fmt core core_unix logger)
+ (libraries unix fmt core core_unix logger channel)
  (foreign_stubs (language c) (names terminal))
  (preprocess (pps 
     ppx_inline_test

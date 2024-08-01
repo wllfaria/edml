@@ -114,11 +114,6 @@ let fill
           in
           (match capture with
            | Some name ->
-             Logger.info
-             @@ Format.sprintf
-                  "Loaded colors: %d - trying to get %s"
-                  (Hashtbl.length !Load_colorscheme.colors)
-                  name;
              (match Hashtbl.find !Load_colorscheme.colors name with
               | Some a -> a
               | None -> Load_colorscheme.empty_style ())

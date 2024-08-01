@@ -1,3 +1,5 @@
+open Terminal
+module T = Thread
 open Core
 
 let tty_buffer_size = 1024
@@ -5,6 +7,7 @@ let tty_buffer_size = 1024
 type event =
   | FocusGained
   | FocusLost
+  | Resize of dimensions
   | KeyEvent of key_event
 [@@deriving eq, show { with_path = false }]
 
@@ -175,13 +178,22 @@ let rec process_buffer ~state ~buffer ~idx ~len =
   | None -> process_buffer ~state:next_state ~buffer ~idx ~len
 ;;
 
+let has_resize_handler = ref false
+
 let read () =
+  if not !has_resize_handler
+  then (
+    set_resize_handler ();
+    has_resize_handler := true);
   let buffer = Bytes.create tty_buffer_size in
   let rec loop () =
     let bytes_read = Core_unix.(read stdin ~buf:buffer ~pos:0 ~len:tty_buffer_size) in
     let idx = ref 0 in
     match bytes_read with
-    | 0 -> loop ()
+    | 0 ->
+      (match Terminal.check_resize () with
+       | Some new_size -> Resize new_size
+       | None -> loop ())
     | _ -> process_buffer ~state:Initial ~buffer ~idx ~len:bytes_read
   in
   loop ()

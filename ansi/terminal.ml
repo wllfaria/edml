@@ -4,11 +4,19 @@ type dimensions =
   { cols : int
   ; rows : int
   }
-[@@deriving show { with_path = false }]
+[@@deriving eq, show { with_path = false }]
 
 module Ffi = struct
   external size : unit -> dimensions = "edml_get_terminal_size"
+  external set_resize_handler : unit -> unit = "edml_set_resize_callback"
+  external check_resize : unit -> (int * int) option = "edml_check_resize"
 end
+
+let set_resize_handler () = Ffi.set_resize_handler ()
+
+let check_resize () =
+  Option.map (fun (cols, rows) -> { cols; rows }) @@ Ffi.check_resize ()
+;;
 
 let original_mode = ref None
 let tty_fd = ref None

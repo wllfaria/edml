@@ -38,4 +38,9 @@ let event_of_ansi (ansi_event : Ansi.Event.event) =
   | FocusGained -> FocusGained
   | FocusLost -> FocusLost
   | KeyEvent ev -> KeyEvent (key_event_of_ansi ev)
+  | Resize new_size ->
+    Logger.info
+    @@ Format.sprintf "resized terminal to: %s"
+    @@ Ansi.Terminal.show_dimensions new_size;
+    FocusGained
 ;;

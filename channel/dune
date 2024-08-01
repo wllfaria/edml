@@ -1,0 +1,4 @@
+(library
+  (name channel)
+  (public_name channel)
+  (libraries core))
