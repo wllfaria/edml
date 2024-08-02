@@ -8,14 +8,14 @@ type dimensions =
 
 module Ffi = struct
   external size : unit -> dimensions = "edml_get_terminal_size"
-  external set_resize_handler : unit -> unit = "edml_set_resize_callback"
-  external check_resize : unit -> (int * int) option = "edml_check_resize"
+  external get_winch_number : unit -> int = "edml_get_winch_number"
 end
 
-let set_resize_handler () = Ffi.set_resize_handler ()
-
-let check_resize () =
-  Option.map (fun (cols, rows) -> { cols; rows }) @@ Ffi.check_resize ()
+let set_resize_handler (f : unit -> unit) : unit =
+  let winch_number = Ffi.get_winch_number () in
+  ignore
+  @@ Core.Signal.Expert.(
+       signal (Core.Signal.of_caml_int winch_number) (`Handle (fun _ -> f ())))
 ;;
 
 let original_mode = ref None

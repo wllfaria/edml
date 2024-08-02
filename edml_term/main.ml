@@ -27,7 +27,7 @@ let setup_terminal () =
   setup_interrupt_signal ()
 ;;
 
-let setup_logger () = Logger.init "/Users/wiru/code/edml/edml.log" Async
+let setup_logger () = Logger.init "/home/wiru/code/edml/edml.log" Async
 
 let render_change (change : Viewport.change) =
   queue
@@ -123,10 +123,13 @@ let rec find_pane (node : Base.pane_tree) needle =
   | _ -> None
 ;;
 
-let handle_action ~(editor : Base.editor) ~(pane : Pane.pane) =
+let handle_action ~viewport ~(editor : Base.editor) ~(pane : Pane.pane) =
   let maybe_actions =
     match Ansi_to_editor.event_of_ansi @@ Ansi.Event.read () with
     | KeyEvent key_event -> Event_handler.handle_key_event key_event editor.mode
+    | Resize new_size ->
+      viewport := Viewport.from_dimensions new_size;
+      None
     | _ -> todo ()
   in
   let editor =
@@ -170,7 +173,7 @@ let rec event_loop viewport editor =
   let previous_viewport = Viewport.copy !viewport in
   let tab = List.nth_exn editor.tabs editor.active_tab in
   let pane = expect ~msg:"must have a pane" @@ find_pane tab.panes tab.active_pane in
-  let editor = handle_action ~editor ~pane in
+  let editor = handle_action ~viewport ~editor ~pane in
   let cursor = !(pane.cursor) in
   execute [ Cursor Hide ];
   render_tab viewport tab editor cursor;

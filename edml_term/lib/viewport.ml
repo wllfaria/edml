@@ -36,6 +36,13 @@ let make ~cols ~rows =
   { cells; cols; rows }
 ;;
 
+let from_dimensions (dimensions : Event_handler.dimensions) =
+  let cols = dimensions.cols in
+  let rows = dimensions.rows in
+  let cells = Array.create ~len:(cols * rows) (make_cell ()) in
+  { cells; cols; rows }
+;;
+
 let normalize_col_row col row total_cols = (row * total_cols) + col
 
 let set_text text ~col ~row ~vp =
@@ -66,7 +73,7 @@ let to_changes viewport =
 
 let diff ~prev ~curr =
   if Array.length prev.cells <> Array.length curr.cells
-  then failwith "Viewports have different sizes"
+  then List.of_array @@ to_changes curr
   else (
     let changes = ref [] in
     Array.iteri prev.cells ~f:(fun idx cell ->

@@ -7,10 +7,17 @@ type action =
   | TextObjectAction of Text_object.action
   | ChangeMode of mode
 
+type dimensions =
+  { cols : int
+  ; rows : int
+  }
+[@@deriving eq, show { with_path = false }]
+
 type event =
   | FocusGained
   | FocusLost
   | KeyEvent of key_event
+  | Resize of dimensions
 [@@deriving eq, show { with_path = false }]
 
 and key_event =

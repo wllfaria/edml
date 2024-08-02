@@ -178,23 +178,32 @@ let rec process_buffer ~state ~buffer ~idx ~len =
   | None -> process_buffer ~state:next_state ~buffer ~idx ~len
 ;;
 
+let resize_channel = Channel.create ()
 let has_resize_handler = ref false
+
+let handle_resize () =
+  let new_size = size () in
+  Channel.send resize_channel new_size
+;;
 
 let read () =
   if not !has_resize_handler
   then (
-    set_resize_handler ();
+    set_resize_handler handle_resize;
     has_resize_handler := true);
   let buffer = Bytes.create tty_buffer_size in
   let rec loop () =
-    let bytes_read = Core_unix.(read stdin ~buf:buffer ~pos:0 ~len:tty_buffer_size) in
-    let idx = ref 0 in
-    match bytes_read with
-    | 0 ->
-      (match Terminal.check_resize () with
-       | Some new_size -> Resize new_size
-       | None -> loop ())
-    | _ -> process_buffer ~state:Initial ~buffer ~idx ~len:bytes_read
+    try
+      match Channel.try_receive resize_channel with
+      | Some new_size -> Resize new_size
+      | None ->
+        let bytes_read = Core_unix.(read stdin ~buf:buffer ~pos:0 ~len:tty_buffer_size) in
+        let idx = ref 0 in
+        (match bytes_read with
+         | 0 -> loop ()
+         | _ -> process_buffer ~state:Initial ~buffer ~idx ~len:bytes_read)
+    with
+    | Core_unix.Unix_error (Core_unix.EINTR, _, _) -> loop ()
   in
   loop ()
 ;;

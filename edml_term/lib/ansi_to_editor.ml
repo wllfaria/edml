@@ -32,15 +32,16 @@ let key_event_of_ansi (ansi_key_event : Ansi.Event.key_event) =
   { code = key_code_of_ansi code; modifier = modifier_of_ansi modifier }
 ;;
 
+let dimensions_of_ansi (ansi_dimensions : Ansi.Terminal.dimensions) =
+  let open Event_handler in
+  { cols = ansi_dimensions.cols; rows = ansi_dimensions.rows }
+;;
+
 let event_of_ansi (ansi_event : Ansi.Event.event) =
   let open Event_handler in
   match ansi_event with
   | FocusGained -> FocusGained
   | FocusLost -> FocusLost
   | KeyEvent ev -> KeyEvent (key_event_of_ansi ev)
-  | Resize new_size ->
-    Logger.info
-    @@ Format.sprintf "resized terminal to: %s"
-    @@ Ansi.Terminal.show_dimensions new_size;
-    FocusGained
+  | Resize new_size -> Resize (dimensions_of_ansi new_size)
 ;;

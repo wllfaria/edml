@@ -1,4 +1,5 @@
 CompileFlags:
   Add: 
-    - "-I/Users/wiru/.opam/default/lib/ocaml"
-    - "-I/opt/homebrew/Cellar/tree-sitter/0.22.6/include"
+    - "-I/home/wiru/.opam/default/lib/ocaml"
+    - "/usr/include"
+    # - "-I/opt/homebrew/Cellar/tree-sitter/0.22.6/include"
